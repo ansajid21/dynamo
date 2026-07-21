@@ -28,3 +28,7 @@
 
 # NGC intermittently returns 503 for this version-filtered page from GitHub runners.
 ^https://catalog\.ngc\.nvidia\.com/orgs/nvidia/teams/ai-dynamo/containers/dynamo-frontend\?version=1\.2\.1$
+
+# GOVERNANCE.md lands in this same PR; the blob/main URL 404s only until merge.
+# TODO(remove after the governance PR merges)
+^https://github\.com/ai-dynamo/dynamo/blob/main/GOVERNANCE\.md$

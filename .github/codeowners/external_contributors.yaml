@@ -27,9 +27,12 @@
 #   affiliation: optional org/company (shown in CONTRIBUTORS.md)
 #   areas:       one or more area labels from areas.yaml (e.g. router, kv-memory)
 #
-# `level` is standing metadata (shown in CONTRIBUTORS.md); it does not change
-# CODEOWNERS routing. Co-ownership is granted by the `areas` a contributor is
-# attached to.
+# `level` GATES code-ownership. Only `maintainer` and `core_maintainer` are
+# emitted into CODEOWNERS, because a code owner's review satisfies the required-
+# review gate -- that is merge authority. A `trusted_contributor` may review and
+# approve but cannot merge (GOVERNANCE.md), so they are recorded in
+# CONTRIBUTORS.md and never routed into CODEOWNERS. `areas` then decides WHICH
+# lines a maintainer co-owns.
 #
 # Example (commented out -- no fictional owners land in CODEOWNERS):
 #

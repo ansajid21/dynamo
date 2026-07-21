@@ -12,7 +12,7 @@ With 200+ external contributors, 220+ merged community PRs, and new contributors
 
 Join the community:
 
-- [CNCF Slack (`#ai-dynamo`)](https://communityinviter.com/apps/cloud-native/cncf) -- join CNCF Slack and find us in `#ai-dynamo`
+- [CNCF Slack (`#ai-dynamo`)](https://slack.cncf.io/) -- join CNCF Slack and find us in `#ai-dynamo`
 - [Discord](https://discord.gg/D92uqZRjCZ)
 - [GitHub Discussions](https://github.com/ai-dynamo/dynamo/discussions)
 - [Design Proposals](https://github.com/ai-dynamo/dynamo/issues?q=is%3Aissue+label%3A%22dep%3Adraft%22%2C%22dep%3Aproposed%22%2C%22dep%3Aapproved%22%2C%22dep%3Aimplementing%22%2C%22dep%3Acompleted%22%2C%22dep%3Adeferred%22%2C%22dep%3Asuperseeded%22) -- RFCs for major features, tracked as `dep:*` labeled GitHub issues
@@ -25,7 +25,7 @@ Join the community:
 For experienced contributors:
 
 1. Fork and clone the repo
-2. For changes ≥100 lines or new features, [open an issue](https://github.com/ai-dynamo/dynamo/issues/new?template=contribution_request.yml) first
+2. For changes over 100 core lines (code, excluding tests, docs, and generated files), or any change spanning multiple areas, changing a public API, or adding a dependency, [open a Contribution Request](https://github.com/ai-dynamo/dynamo/issues/new?template=contribution_request.yml) first
 3. Create a branch: `git checkout -b yourname/fix-router-timeout`
 4. Make changes, run `pre-commit run`
 5. Commit with DCO sign-off: `git commit -s -m "fix: description"`
@@ -65,7 +65,7 @@ Ready to write code? See the [Contribution Workflow](#contribution-workflow) sec
 
 Not all contributions are code. You can also:
 
-- Answer questions on [Discord](https://discord.gg/D92uqZRjCZ) or in the `#ai-dynamo` channel on [CNCF Slack](https://communityinviter.com/apps/cloud-native/cncf)
+- Answer questions on [Discord](https://discord.gg/D92uqZRjCZ) or in the `#ai-dynamo` channel on [CNCF Slack](https://slack.cncf.io/)
 - Review pull requests
 - Share how you're using Dynamo -- blog posts, talks, or social media
 - Star the [repository](https://github.com/ai-dynamo/dynamo)
@@ -208,9 +208,11 @@ The contribution process depends on the size and scope of your change. Even when
 | **XL** | 500–1000 | Major feature, cross-component change | [Open an issue](https://github.com/ai-dynamo/dynamo/issues/new?template=contribution_request.yml) first |
 | **XXL** | 1000+ | Architecture change | Requires a [DEP](https://github.com/ai-dynamo/dynamo/issues/new?template=dep.yml) |
 
-**Small changes (under 100 lines):** Submit a PR directly -- no issue needed. This includes typos, simple bug fixes, and formatting. If your PR addresses an existing approved issue, link it with "Fixes #123".
+Line counts here mean **core lines**: changed lines of code, excluding tests, documentation, and generated files.
 
-**Larger changes (≥100 lines):** [Open a Contribution Request](https://github.com/ai-dynamo/dynamo/issues/new?template=contribution_request.yml) issue first and wait for the `approved-for-pr` label before submitting a PR.
+**Small changes (under 100 core lines):** Submit a PR directly -- no issue needed. This includes typos, simple bug fixes, and formatting. If your PR addresses an existing approved issue, link it with "Fixes #123".
+
+**Larger changes (100+ core lines, multiple areas, a public API, or a new dependency):** [Open a Contribution Request](https://github.com/ai-dynamo/dynamo/issues/new?template=contribution_request.yml) issue first and wait for the `approved-for-pr` label before submitting a PR. Trusted Contributors (see [GOVERNANCE.md](https://github.com/ai-dynamo/dynamo/blob/main/GOVERNANCE.md)) are exempt from the size trigger; a CR is still required for the structural triggers.
 
 **Architecture changes:** Changes that affect multiple components, introduce or modify public APIs, alter communication plane architecture, or affect backend integration contracts require a Dynamo Enhancement Proposal (DEP). DEPs are tracked as [`dep:*` labeled GitHub issues](https://github.com/ai-dynamo/dynamo/issues?q=is%3Aissue+label%3A%22dep%3Adraft%22%2C%22dep%3Aproposed%22%2C%22dep%3Aapproved%22%2C%22dep%3Aimplementing%22%2C%22dep%3Acompleted%22%2C%22dep%3Adeferred%22%2C%22dep%3Asuperseeded%22) on `ai-dynamo/dynamo` -- [open a DEP issue](https://github.com/ai-dynamo/dynamo/issues/new?template=dep.yml) before starting implementation.
 
@@ -224,12 +226,14 @@ The contribution process depends on the size and scope of your change. Even when
 
 4. **Address Code Rabbit Review** — Respond to automated Code Rabbit suggestions, including nitpicks.
 
-5. **Trigger CI Tests** — For external contributors, a maintainer must comment `/ok to test COMMIT-ID` to run the full CI suite, where `COMMIT-ID` is the short SHA of your latest commit. Fix any failing tests before requesting human review.
+5. **Trigger CI Tests** — For external contributors, a maintainer must approve your PR's current head to run the full CI suite, either by commenting `/ok to test COMMIT-ID` (the short SHA of your latest commit) or by updating your branch; each new push needs approval again. Every commit must carry a signature that GitHub reports as verified -- unsigned commits block CI approval. Trusted Contributors receive automatic CI approval for each new head. Fix any failing tests before requesting human review.
 
-6. **Request Review** — Add the person who approved your issue as a reviewer. Check [CODEOWNERS](https://github.com/ai-dynamo/dynamo/blob/main/CODEOWNERS) for required approvers based on files modified.
+6. **Request Review** — GitHub auto-requests the [CODEOWNERS](https://github.com/ai-dynamo/dynamo/blob/main/CODEOWNERS) team that owns each file you touched. Every pull request needs approval from at least two Maintainers other than the author -- human reviews only; automated review is a supplemental signal. Add the person who approved your Contribution Request as a reviewer if they were not auto-requested.
 
 > [!IMPORTANT]
-> **AI-Generated Code:** While we encourage using AI tools, you must fully understand every change in your PR. Inability to explain submitted code will result in rejection.
+> **AI-Generated Code:** While we encourage using AI tools, you must fully understand every change in your PR. Inability to explain submitted code will result in rejection. Disclose substantial AI assistance in the PR description; fully automated submissions opened without human review of the content are not accepted (see [GOVERNANCE.md](https://github.com/ai-dynamo/dynamo/blob/main/GOVERNANCE.md), "AI-Assisted Contributions").
+
+**Governance and the contributor ladder:** how the project is run -- the Contributor / Trusted Contributor / Maintainer ladder, SIGs (open to everyone), decision-making, and how sustained contributors earn review and merge rights -- is defined in [GOVERNANCE.md](https://github.com/ai-dynamo/dynamo/blob/main/GOVERNANCE.md).
 
 ### Branch Naming
 
@@ -422,7 +426,7 @@ If you discover a security vulnerability, please follow the instructions in our 
 
 ## Getting Help
 
-- **CNCF Slack**: [Join CNCF Slack](https://communityinviter.com/apps/cloud-native/cncf) and find us in `#ai-dynamo`
+- **CNCF Slack**: [Join CNCF Slack](https://slack.cncf.io/) and find us in `#ai-dynamo`
 - **Discord**: [Join our community](https://discord.gg/D92uqZRjCZ)
 - **Discussions**: [GitHub Discussions](https://github.com/ai-dynamo/dynamo/discussions)
 - **Design Proposals**: [RFCs for major features, tracked as `dep:*` labeled GitHub issues](https://github.com/ai-dynamo/dynamo/issues?q=is%3Aissue+label%3A%22dep%3Adraft%22%2C%22dep%3Aproposed%22%2C%22dep%3Aapproved%22%2C%22dep%3Aimplementing%22%2C%22dep%3Acompleted%22%2C%22dep%3Adeferred%22%2C%22dep%3Asuperseeded%22)
