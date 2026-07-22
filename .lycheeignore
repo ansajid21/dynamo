@@ -39,3 +39,6 @@
 ^https://docs\.nvidia\.com/dynamo/dev/reference/releases/(release-history|v1-[0-9]+-[0-9]+)$
 ^https://github\.com/ai-dynamo/dynamo/blob/main/docs/fern/components/releases\.data\.ts$
 
+# This example is introduced by the same PR as its docs link, so the main-branch
+# URL returns 404 until merge.
+^https://github\.com/ai-dynamo/dynamo/tree/main/examples/power-aware-budget$
