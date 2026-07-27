@@ -2871,7 +2871,6 @@ dependencies = [
  "prost 0.13.5",
  "rand 0.9.4",
  "serde_json",
- "sha2",
  "tokio",
  "tokio-util",
  "tonic 0.13.1",
