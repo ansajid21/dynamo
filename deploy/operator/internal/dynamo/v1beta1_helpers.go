@@ -17,7 +17,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-const checkpointFailoverUnsupportedMessage = "checkpoint/snapshot is not supported with active/passive failover"
+// CheckpointFailoverUnsupportedMessage is shared by admission and reconciliation.
+const CheckpointFailoverUnsupportedMessage = "checkpoint/snapshot is not supported with active/passive failover"
 
 // ComponentsByName returns the graph deployment components indexed by their
 // stable v1beta1 component name.
@@ -191,7 +192,7 @@ func ValidateCheckpointFailoverCompatibility(experimental *v1beta1.ExperimentalS
 		!experimental.Checkpoint.Enabled || experimental.Failover == nil {
 		return nil
 	}
-	return errors.New(checkpointFailoverUnsupportedMessage)
+	return errors.New(CheckpointFailoverUnsupportedMessage)
 }
 
 // ToAlphaCheckpointConfig converts a v1beta1 checkpoint config into the

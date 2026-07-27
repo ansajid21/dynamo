@@ -533,6 +533,14 @@ func (v *dynamoGraphDeploymentValidation) validateDynamoGraphDeploymentSpecUpdat
 	componentsPath := fldPath.Child("components")
 	for i := range newSpec.Components {
 		newComponent := &newSpec.Components[i]
+		componentPath := componentsPath.Index(i)
+		if err := dynamo.ValidateCheckpointFailoverCompatibility(newComponent.Experimental); err != nil {
+			allErrs = append(allErrs, field.Forbidden(
+				componentPath.Child("experimental", "checkpoint"),
+				dynamo.CheckpointFailoverUnsupportedMessage,
+			))
+		}
+
 		oldComponent, exists := oldComponents[newComponent.ComponentName]
 		if !exists {
 			continue
@@ -540,7 +548,7 @@ func (v *dynamoGraphDeploymentValidation) validateDynamoGraphDeploymentSpecUpdat
 		allErrs = append(allErrs, v.validateDynamoComponentDeploymentSharedSpecUpdate(
 			newComponent,
 			oldComponent,
-			componentsPath.Index(i),
+			componentPath,
 			canModifyReplicas,
 			nvidiacomv1beta1.DynamoGraphDeploymentGVK.GroupKind(),
 		)...)

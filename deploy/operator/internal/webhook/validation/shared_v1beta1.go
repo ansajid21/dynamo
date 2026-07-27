@@ -220,7 +220,10 @@ func (v *sharedValidation) validateExperimentalSpec(
 	}
 
 	if err := dynamo.ValidateCheckpointFailoverCompatibility(experimental); err != nil {
-		allErrs = append(allErrs, field.Forbidden(fldPath.Child("checkpoint"), err.Error()))
+		allErrs = append(allErrs, field.Forbidden(
+			fldPath.Child("checkpoint"),
+			dynamo.CheckpointFailoverUnsupportedMessage,
+		))
 	}
 	return allErrs
 }

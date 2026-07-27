@@ -740,20 +740,8 @@ func TestDynamoGraphDeploymentValidator_Validate(t *testing.T) {
 		{
 			name: "v1alpha1 checkpoint with active-passive failover is rejected after conversion",
 			deployment: alphaDGDForAdmission(func(dgd *nvidiacomv1alpha1.DynamoGraphDeployment) {
-				dgd.Annotations = map[string]string{consts.KubeAnnotationDynamoKubeDiscoveryMode: "container"}
-				worker := dgd.Spec.Services["worker"]
-				worker.Resources = &nvidiacomv1alpha1.Resources{
-					Limits: &nvidiacomv1alpha1.ResourceItem{GPU: "1"},
-				}
-				worker.GPUMemoryService = &nvidiacomv1alpha1.GPUMemoryServiceSpec{
-					Enabled: true,
-					Mode:    nvidiacomv1alpha1.GMSModeIntraPod,
-				}
-				worker.Failover = &nvidiacomv1alpha1.FailoverSpec{
-					Enabled: true,
-					Mode:    nvidiacomv1alpha1.GMSModeIntraPod,
-				}
-				worker.Checkpoint = &nvidiacomv1alpha1.ServiceCheckpointConfig{Enabled: true}
+				enableAlphaIntraPodGMSFailover(dgd)
+				dgd.Spec.Services["worker"].Checkpoint = &nvidiacomv1alpha1.ServiceCheckpointConfig{Enabled: true}
 			}),
 			wantWebhookErrs: []string{"spec.components[0].experimental.checkpoint: Forbidden: checkpoint/snapshot is not supported with active/passive failover"},
 		},
@@ -1447,6 +1435,50 @@ func TestDynamoGraphDeploymentValidator_Validate(t *testing.T) {
 
 		// GMS and failover updates.
 		{
+			name: "v1beta1 failover-enabled DGD cannot add checkpoint",
+			oldDeployment: betaDGDForAdmission(func(dgd *nvidiacomv1beta1.DynamoGraphDeployment) {
+				enableBetaContainerDiscovery(dgd)
+				worker := betaWorkerComponent(dgd)
+				enableBetaIntraPodGMS(worker)
+				worker.Experimental.Failover = &nvidiacomv1beta1.FailoverSpec{Mode: nvidiacomv1beta1.GMSModeIntraPod}
+			}),
+			deployment: betaDGDForAdmission(func(dgd *nvidiacomv1beta1.DynamoGraphDeployment) {
+				enableBetaContainerDiscovery(dgd)
+				worker := betaWorkerComponent(dgd)
+				enableBetaIntraPodGMS(worker)
+				worker.Experimental.Failover = &nvidiacomv1beta1.FailoverSpec{Mode: nvidiacomv1beta1.GMSModeIntraPod}
+				worker.Experimental.Checkpoint = &nvidiacomv1beta1.ComponentCheckpointConfig{Enabled: true}
+			}),
+			wantWebhookErrs: []string{"spec.components[1].experimental.checkpoint: Forbidden: checkpoint/snapshot is not supported with active/passive failover"},
+		},
+		{
+			name: "v1beta1 checkpoint-enabled DGD cannot add failover",
+			oldDeployment: betaDGDForAdmission(func(dgd *nvidiacomv1beta1.DynamoGraphDeployment) {
+				betaWorkerComponent(dgd).Experimental = &nvidiacomv1beta1.ExperimentalSpec{
+					Checkpoint: &nvidiacomv1beta1.ComponentCheckpointConfig{Enabled: true},
+				}
+			}),
+			deployment: betaDGDForAdmission(func(dgd *nvidiacomv1beta1.DynamoGraphDeployment) {
+				enableBetaContainerDiscovery(dgd)
+				worker := betaWorkerComponent(dgd)
+				enableBetaIntraPodGMS(worker)
+				worker.Experimental.Failover = &nvidiacomv1beta1.FailoverSpec{Mode: nvidiacomv1beta1.GMSModeIntraPod}
+				worker.Experimental.Checkpoint = &nvidiacomv1beta1.ComponentCheckpointConfig{Enabled: true}
+			}),
+			wantWebhookErrs: []string{"spec.components[1].experimental.checkpoint: Forbidden: checkpoint/snapshot is not supported with active/passive failover"},
+		},
+		{
+			name: "v1alpha1 failover-enabled DGD cannot add checkpoint after conversion",
+			oldDeployment: alphaDGDForAdmission(func(dgd *nvidiacomv1alpha1.DynamoGraphDeployment) {
+				enableAlphaIntraPodGMSFailover(dgd)
+			}),
+			deployment: alphaDGDForAdmission(func(dgd *nvidiacomv1alpha1.DynamoGraphDeployment) {
+				enableAlphaIntraPodGMSFailover(dgd)
+				dgd.Spec.Services["worker"].Checkpoint = &nvidiacomv1alpha1.ServiceCheckpointConfig{Enabled: true}
+			}),
+			wantWebhookErrs: []string{"spec.components[0].experimental.checkpoint: Forbidden: checkpoint/snapshot is not supported with active/passive failover"},
+		},
+		{
 			name:          "inter-pod GMS layout is immutable",
 			oldDeployment: newBetaDGDForValidation(),
 			deployment: betaDGDWithWorker(func(worker *nvidiacomv1beta1.DynamoComponentDeploymentSharedSpec) {
@@ -1926,6 +1958,22 @@ func enableAlphaInterPodGMSFailover(
 		Enabled:    true,
 		Mode:       nvidiacomv1alpha1.GMSModeInterPod,
 		NumShadows: numShadows,
+	}
+}
+
+func enableAlphaIntraPodGMSFailover(dgd *nvidiacomv1alpha1.DynamoGraphDeployment) {
+	dgd.Annotations = map[string]string{consts.KubeAnnotationDynamoKubeDiscoveryMode: "container"}
+	component := dgd.Spec.Services["worker"]
+	component.Resources = &nvidiacomv1alpha1.Resources{
+		Limits: &nvidiacomv1alpha1.ResourceItem{GPU: "1"},
+	}
+	component.GPUMemoryService = &nvidiacomv1alpha1.GPUMemoryServiceSpec{
+		Enabled: true,
+		Mode:    nvidiacomv1alpha1.GMSModeIntraPod,
+	}
+	component.Failover = &nvidiacomv1alpha1.FailoverSpec{
+		Enabled: true,
+		Mode:    nvidiacomv1alpha1.GMSModeIntraPod,
 	}
 }
 

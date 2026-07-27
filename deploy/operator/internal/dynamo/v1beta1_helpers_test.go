@@ -59,8 +59,8 @@ func TestValidateCheckpointFailoverCompatibility(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateCheckpointFailoverCompatibility(tt.experimental)
 			if tt.wantErr {
-				if err == nil || err.Error() != checkpointFailoverUnsupportedMessage {
-					t.Fatalf("ValidateCheckpointFailoverCompatibility() error = %v, want %q", err, checkpointFailoverUnsupportedMessage)
+				if err == nil || err.Error() != CheckpointFailoverUnsupportedMessage {
+					t.Fatalf("ValidateCheckpointFailoverCompatibility() error = %v, want %q", err, CheckpointFailoverUnsupportedMessage)
 				}
 				return
 			}
