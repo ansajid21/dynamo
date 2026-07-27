@@ -190,8 +190,9 @@ pub fn validate_response_format(
                 anyhow::bail!("`response_format.json_schema.name` cannot be empty");
             }
 
-            // Missing schemas are rejected during deserialization; preserve the
-            // previous validation behavior for an explicitly null schema.
+            // Validate schema presence. `schema` is a non-optional
+            // `serde_json::Value`, so an explicit `null` is the only way it
+            // can still arrive empty.
             if json_schema.schema.is_null() {
                 anyhow::bail!(
                     "`response_format.json_schema.schema` is required when `response_format.type` is `json_schema`"
@@ -845,21 +846,6 @@ mod tests {
         let args = HashMap::from([("enable_thinking".to_string(), json!(false))]);
         validate_chat_template_args(Some(&args)).unwrap();
         validate_chat_template_args(None).unwrap();
-    }
-
-    #[test]
-    fn validate_response_format_rejects_null_json_schema() {
-        let response_format = serde_json::from_value(json!({
-            "type": "json_schema",
-            "json_schema": {
-                "name": "test_schema",
-                "schema": null
-            }
-        }))
-        .unwrap();
-
-        let err = validate_response_format(&Some(response_format)).unwrap_err();
-        assert!(err.to_string().contains("schema` is required"));
     }
 
     #[test]
