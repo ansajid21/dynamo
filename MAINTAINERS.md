@@ -34,7 +34,6 @@ Roster of the governance roles defined in [GOVERNANCE.md](GOVERNANCE.md). An upd
 | **Meenakshi Sharma** | @nvda-mesharma |
 | **Neelay Shah** | @nnshah1 |
 | **Ryan Olson** | @ryanolson |
-| **Graham King** | @grahamking |
 | **Biswa Panda** | @biswapanda |
 | **Harrison Saturley-Hall** | @saturley-hall |
 | **Dmitry Tokarev** | @dmitry-tokarev-nv |
