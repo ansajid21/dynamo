@@ -89,7 +89,7 @@ A Trusted Contributor who has earned merge authority within a specific area.
 - Trigger CI for any pull request.
 - Nominate Contributors for Trusted Contributor status.
 
-*"Maintainer" refers to this governance role. Internal Maintainers hold area authority through membership in their area's CODEOWNERS team. External Maintainers cannot join those org teams, so they are listed individually in CODEOWNERS on their area's paths, and repository `write` comes from a dedicated access team for external Maintainers, orthogonal to the area teams. Branch protection requires review from the owners of each changed path, so in both cases a Maintainer's approval satisfies the merge gate only within their own area.*
+*"Maintainer" refers to this governance role. Internal Maintainers hold area authority through membership in their area's CODEOWNERS team. External Maintainers cannot join those org teams, so they are listed individually in CODEOWNERS on their area's paths, and repository `write` comes from the `external_maintainers` access team, orthogonal to the area teams. Branch protection requires review from the owners of each changed path, so in both cases a Maintainer's approval satisfies the merge gate only within their own area.*
 
 ### Core Maintainer
 
