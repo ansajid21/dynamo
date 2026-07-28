@@ -29,9 +29,11 @@ import (
 	commonController "github.com/ai-dynamo/dynamo/deploy/operator/internal/controller_common"
 	"github.com/ai-dynamo/dynamo/deploy/operator/internal/features"
 	snapshotprotocol "github.com/ai-dynamo/dynamo/deploy/snapshot/protocol"
+	grovev1alpha1 "github.com/ai-dynamo/grove/operator/api/core/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
@@ -158,9 +160,13 @@ func TestGroveProgram_ReconcilePreservesResultOnError(t *testing.T) {
 	dgd := createTestDGD("test-dgd", map[string]*nvidiacomv1alpha1.DynamoComponentDeploymentSharedSpec{
 		"worker": {ComponentType: commonconsts.ComponentTypeWorker},
 	})
+	dgd.Spec.TopologyConstraint = &nvidiacomv1beta1.SpecTopologyConstraint{ClusterTopologyName: "test-topology"}
+	pcs := &grovev1alpha1.PodCliqueSet{
+		ObjectMeta: metav1.ObjectMeta{Name: dgd.Name, Namespace: dgd.Namespace},
+	}
 	kubeClient := fake.NewClientBuilder().
 		WithScheme(newDynamoGraphDeploymentControllerTestScheme(t)).
-		WithObjects(dgd).
+		WithObjects(dgd, pcs).
 		WithInterceptorFuncs(interceptor.Funcs{
 			Update: func(context.Context, client.WithWatch, client.Object, ...client.UpdateOption) error {
 				return reconcileErr
@@ -184,7 +190,15 @@ func TestGroveProgram_ReconcilePreservesResultOnError(t *testing.T) {
 	t.Log("Verify failed primary mutation does not mutate request.DGD.Status")
 	require.ErrorIs(t, err, reconcileErr)
 	require.NotNil(t, result.Status)
-	assert.Equal(t, previous, *result.Status)
+	assert.Equal(t, previous.State, result.Status.State)
+	assert.Equal(t, previous.Components, result.Status.Components)
+	topologyCondition := meta.FindStatusCondition(
+		result.Status.Conditions,
+		nvidiacomv1beta1.ConditionTypeTopologyLevelsAvailable,
+	)
+	require.NotNil(t, topologyCondition)
+	assert.Equal(t, metav1.ConditionUnknown, topologyCondition.Status)
+	assert.Equal(t, nvidiacomv1beta1.ConditionReasonTopologyConditionPending, topologyCondition.Reason)
 	assert.Equal(t, previous, dgd.Status)
 	reason, ok := workloadProgramFailureReason(err)
 	require.True(t, ok)

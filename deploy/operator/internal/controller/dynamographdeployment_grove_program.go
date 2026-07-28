@@ -22,11 +22,9 @@ import (
 	"fmt"
 
 	nvidiacomv1beta1 "github.com/ai-dynamo/dynamo/deploy/operator/api/v1beta1"
-	"github.com/ai-dynamo/dynamo/deploy/operator/internal/checkpoint"
 	commonconsts "github.com/ai-dynamo/dynamo/deploy/operator/internal/consts"
 	commoncontroller "github.com/ai-dynamo/dynamo/deploy/operator/internal/controller_common"
 	"github.com/ai-dynamo/dynamo/deploy/operator/internal/dynamo"
-	"github.com/ai-dynamo/dynamo/deploy/operator/internal/features"
 	grovev1alpha1 "github.com/ai-dynamo/grove/operator/api/core/v1alpha1"
 	networkingv1beta1 "istio.io/client-go/pkg/apis/networking/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,17 +33,16 @@ import (
 )
 
 type groveProgram struct {
-	// The DGD reconciler temporarily supplies shared controller dependencies and
-	// Grove rendering, scaling, and persistence helpers. Later extractions can
-	// narrow this without moving Grove orchestration back into the common flow.
-	reconciler *DynamoGraphDeploymentReconciler
-	renderer   *groveWorkloadRenderer
-	lwsEnabled bool
+	// The DGD reconciler supplies provider-neutral resource synchronization and
+	// shared stable-resource operations. Grove-specific rendering, scaling, and
+	// status interpretation are explicit collaborators owned by this program.
+	reconciler     *DynamoGraphDeploymentReconciler
+	renderer       *groveWorkloadRenderer
+	scaler         *groveScaler
+	statusResolver *groveStatusResolver
 }
 
 func newGroveProgram(reconciler *DynamoGraphDeploymentReconciler) *groveProgram {
-	lwsEnabled := reconciler.RuntimeConfig != nil &&
-		reconciler.RuntimeConfig.Gate.Enabled(features.LWS)
 	return &groveProgram{
 		reconciler: reconciler,
 		renderer: newGroveWorkloadRenderer(
@@ -54,7 +51,8 @@ func newGroveProgram(reconciler *DynamoGraphDeploymentReconciler) *groveProgram 
 			reconciler.RuntimeConfig,
 			reconciler.DockerSecretRetriever,
 		),
-		lwsEnabled: lwsEnabled,
+		scaler:         newGroveScaler(reconciler.ScaleClient),
+		statusResolver: newGroveStatusResolver(reconciler.Client, reconciler.Recorder),
 	}
 }
 
@@ -65,11 +63,20 @@ func (p *groveProgram) Reconcile(
 	ctx context.Context,
 	req workloadProgramRequest,
 ) (workloadProgramResult, error) {
+	programResult, err := p.reconcile(ctx, req)
+	p.statusResolver.projectTopologyCondition(ctx, req.DGD, programResult.Status)
+	return programResult, err
+}
+
+func (p *groveProgram) reconcile(
+	ctx context.Context,
+	req workloadProgramRequest,
+) (workloadProgramResult, error) {
 	programResult := newWorkloadProgramResult(req.DGD)
+
 	log.FromContext(ctx).Info(
 		"Reconciling Grove resources",
 		"hasMultinode", req.DGD.HasAnyMultinodeComponent(),
-		"lwsEnabled", p.lwsEnabled,
 	)
 
 	if err := p.reconciler.migrateCurrentWorkerHashIfNeeded(ctx, req.DGD); err != nil {
@@ -86,7 +93,12 @@ func (p *groveProgram) Reconcile(
 	if err != nil {
 		return programResult, err
 	}
-	restart := p.reconciler.resolveProgramRestartState(ctx, req.DGD, programResult.Status)
+	restart := p.reconciler.resolveProgramRestartState(
+		ctx,
+		req.DGD,
+		programResult.Status,
+		p.statusResolver.getUpdatedInProgress,
+	)
 
 	result, err := p.reconcileWorkloads(ctx, workloadReconcileRequest{
 		DGD:             req.DGD,
@@ -94,7 +106,7 @@ func (p *groveProgram) Reconcile(
 		CheckpointInfos: inputs.CheckpointInfos,
 	})
 	if err != nil {
-		return programResult, fmt.Errorf("failed to reconcile Dynamo components deployments: %w", err)
+		return programResult, fmt.Errorf("failed to reconcile Grove workloads: %w", err)
 	}
 	result, err = p.reconciler.reconcileProgramResult(ctx, req.DGD, inputs, restart, result)
 	if err != nil {
@@ -106,38 +118,68 @@ func (p *groveProgram) Reconcile(
 }
 
 // reconcileWorkloads owns the Grove pathway's complete provider workload
-// sequence. The lower-level rendering and persistence helpers remain on the
-// DGD reconciler temporarily, but the program owns when and how they compose.
+// sequence. Provider-specific rendering, scaling, and readiness operations are
+// owned by Grove collaborators; shared stable resources remain common.
 func (p *groveProgram) reconcileWorkloads(
 	ctx context.Context,
 	req workloadReconcileRequest,
 ) (ReconcileResult, error) {
-	r := p.reconciler
 	dynamoDeployment := req.DGD
 	logger := log.FromContext(ctx)
 
-	renderInputs, err := p.renderer.resolveInputs(ctx, dynamoDeployment)
+	renderInputs, err := p.renderer.resolveInputs(ctx, dynamoDeployment, req.CheckpointInfos)
 	if err != nil {
 		return ReconcileResult{}, err
 	}
 
-	grovePodCliqueSetAsResource, err := p.reconcilePodCliqueSet(
+	syncedPodCliqueSet, err := p.reconcilePodCliqueSet(
 		ctx,
 		dynamoDeployment,
 		renderInputs,
 		req.RestartState,
-		req.CheckpointInfos,
 	)
 	if err != nil {
-		logger.Error(err, "failed to reconcile the Grove PodClique Set")
-		return ReconcileResult{}, fmt.Errorf("failed to reconcile the Grove PodClique Set: %w", err)
+		logger.Error(err, "failed to reconcile the Grove PodCliqueSet")
+		return ReconcileResult{}, fmt.Errorf("failed to reconcile the Grove PodCliqueSet: %w", err)
 	}
 
 	// Handle Grove scaling operations after structural changes.
-	if err := r.reconcileGroveScaling(ctx, dynamoDeployment, req.CheckpointInfos); err != nil {
+	if err := p.scaler.reconcile(ctx, dynamoDeployment, req.CheckpointInfos); err != nil {
 		logger.Error(err, "failed to reconcile Grove scaling")
 		return ReconcileResult{}, fmt.Errorf("failed to reconcile Grove scaling: %w", err)
 	}
+
+	stableResources, err := p.reconcileStableResources(
+		ctx,
+		dynamoDeployment,
+		renderInputs.DGD,
+	)
+	if err != nil {
+		return ReconcileResult{}, err
+	}
+
+	grovePodCliqueSetAsResource, groveReadiness, err := p.observePodCliqueSetReadiness(
+		ctx,
+		dynamoDeployment,
+		syncedPodCliqueSet,
+	)
+	if err != nil {
+		return ReconcileResult{}, err
+	}
+
+	resources := append(stableResources, grovePodCliqueSetAsResource)
+	return p.checkResourcesReadiness(resources, groveReadiness.Classification), nil
+}
+
+// reconcileStableResources owns the services and ingress resources that
+// accompany the Grove workload but do not participate in Grove readiness.
+func (p *groveProgram) reconcileStableResources(
+	ctx context.Context,
+	dynamoDeployment *nvidiacomv1beta1.DynamoGraphDeployment,
+	renderDeployment *nvidiacomv1beta1.DynamoGraphDeployment,
+) ([]Resource, error) {
+	r := p.reconciler
+	logger := log.FromContext(ctx)
 
 	// Reconcile headless services for model endpoint discovery.
 	if err := dynamo.ReconcileModelServicesForComponents(
@@ -148,12 +190,12 @@ func (p *groveProgram) reconcileWorkloads(
 		dynamoDeployment.Namespace,
 	); err != nil {
 		logger.Error(err, "failed to reconcile model services")
-		return ReconcileResult{}, fmt.Errorf("failed to reconcile model services: %w", err)
+		return nil, fmt.Errorf("failed to reconcile model services: %w", err)
 	}
 
-	resources := []Resource{grovePodCliqueSetAsResource}
-	for i := range renderInputs.DGD.Spec.Components {
-		component := &renderInputs.DGD.Spec.Components[i]
+	resources := []Resource{}
+	for i := range renderDeployment.Spec.Components {
+		component := &renderDeployment.Spec.Components[i]
 		componentName := component.ComponentName
 
 		// If Kubernetes discovery is enabled, create a Service for each
@@ -163,20 +205,20 @@ func (p *groveProgram) reconcileWorkloads(
 			dynamoDeployment.Annotations,
 		)
 		if isK8sDiscoveryEnabled || string(component.ComponentType) == commonconsts.ComponentTypeFrontend {
-			dynamoNamespace := renderInputs.DGD.GetDynamoNamespaceForComponent(component)
+			dynamoNamespace := renderDeployment.GetDynamoNamespaceForComponent(component)
 			mainComponentService, err := dynamo.GenerateComponentService(dynamo.ComponentServiceParams{
 				ServiceName:     dynamo.GetDCDResourceName(dynamoDeployment, componentName, ""),
 				Namespace:       dynamoDeployment.Namespace,
 				ComponentType:   string(component.ComponentType),
 				DynamoNamespace: dynamoNamespace,
 				ComponentName:   componentName,
-				Labels:          dynamo.GetDGDComponentResourceLabels(renderInputs.DGD, componentName, component),
-				Annotations:     dynamo.GetDGDComponentResourceAnnotations(renderInputs.DGD, componentName, component),
+				Labels:          dynamo.GetDGDComponentResourceLabels(renderDeployment, componentName, component),
+				Annotations:     dynamo.GetDGDComponentResourceAnnotations(renderDeployment, componentName, component),
 				IsK8sDiscovery:  isK8sDiscoveryEnabled,
 			})
 			if err != nil {
 				logger.Error(err, "failed to generate the main component service")
-				return ReconcileResult{}, fmt.Errorf("failed to generate the main component service: %w", err)
+				return nil, fmt.Errorf("failed to generate the main component service: %w", err)
 			}
 			_, syncedMainComponentService, err := commoncontroller.SyncResource(
 				ctx,
@@ -188,14 +230,14 @@ func (p *groveProgram) reconcileWorkloads(
 			)
 			if err != nil {
 				logger.Error(err, "failed to sync the main component service")
-				return ReconcileResult{}, fmt.Errorf("failed to sync the main component service: %w", err)
+				return nil, fmt.Errorf("failed to sync the main component service: %w", err)
 			}
 			if syncedMainComponentService != nil {
 				if syncedMainComponentService.Annotations == nil {
 					syncedMainComponentService.Annotations = make(map[string]string)
 				}
 				desiredAnnotations := dynamo.GetDGDComponentResourceAnnotations(
-					renderInputs.DGD,
+					renderDeployment,
 					componentName,
 					component,
 				)
@@ -217,7 +259,7 @@ func (p *groveProgram) reconcileWorkloads(
 							componentName,
 							err,
 						)
-						return ReconcileResult{}, fmt.Errorf("failed to update main component service %s: %w", componentName, err)
+						return nil, fmt.Errorf("failed to update main component service %s: %w", componentName, err)
 					}
 				}
 				mainComponentServiceAsResource, err := commoncontroller.NewResource(
@@ -227,7 +269,7 @@ func (p *groveProgram) reconcileWorkloads(
 					},
 				)
 				if err != nil {
-					return ReconcileResult{}, fmt.Errorf("failed to sync the main component service: %w", err)
+					return nil, fmt.Errorf("failed to sync the main component service: %w", err)
 				}
 				resources = append(resources, mainComponentServiceAsResource)
 			}
@@ -258,7 +300,7 @@ func (p *groveProgram) reconcileWorkloads(
 			)
 			if err != nil {
 				logger.Error(err, "failed to sync the main component ingress")
-				return ReconcileResult{}, fmt.Errorf("failed to sync the main component ingress: %w", err)
+				return nil, fmt.Errorf("failed to sync the main component ingress: %w", err)
 			}
 			if syncedMainComponentIngress != nil {
 				mainComponentIngressAsResource, err := commoncontroller.NewResource(
@@ -268,7 +310,7 @@ func (p *groveProgram) reconcileWorkloads(
 					},
 				)
 				if err != nil {
-					return ReconcileResult{}, fmt.Errorf("failed to create the main component ingress resource: %w", err)
+					return nil, fmt.Errorf("failed to create the main component ingress resource: %w", err)
 				}
 				resources = append(resources, mainComponentIngressAsResource)
 			}
@@ -294,7 +336,7 @@ func (p *groveProgram) reconcileWorkloads(
 				)
 				if err != nil {
 					logger.Error(err, "failed to sync the main component virtual service")
-					return ReconcileResult{}, fmt.Errorf("failed to sync the main component virtual service: %w", err)
+					return nil, fmt.Errorf("failed to sync the main component virtual service: %w", err)
 				}
 				if syncedMainComponentVirtualService != nil {
 					mainComponentVirtualServiceAsResource, err := commoncontroller.NewResource(
@@ -304,7 +346,7 @@ func (p *groveProgram) reconcileWorkloads(
 						},
 					)
 					if err != nil {
-						return ReconcileResult{}, fmt.Errorf("failed to create the main component virtual service resource: %w", err)
+						return nil, fmt.Errorf("failed to create the main component virtual service resource: %w", err)
 					}
 					resources = append(resources, mainComponentVirtualServiceAsResource)
 				}
@@ -312,7 +354,7 @@ func (p *groveProgram) reconcileWorkloads(
 		}
 	}
 
-	return p.checkResourcesReadiness(ctx, dynamoDeployment, resources)
+	return resources, nil
 }
 
 func (p *groveProgram) reconcilePodCliqueSet(
@@ -320,18 +362,16 @@ func (p *groveProgram) reconcilePodCliqueSet(
 	dynamoDeployment *nvidiacomv1beta1.DynamoGraphDeployment,
 	renderInputs groveRenderInputs,
 	restartState *dynamo.RestartState,
-	checkpointInfos map[string]*checkpoint.CheckpointInfo,
-) (*commoncontroller.Resource, error) {
+) (*grovev1alpha1.PodCliqueSet, error) {
 	r := p.reconciler
 	logger := log.FromContext(ctx)
-	desired, err := p.renderer.renderPodCliqueSet(ctx, grovePodCliqueSetRenderRequest{
-		Inputs:          renderInputs,
-		RestartState:    restartState,
-		CheckpointInfos: checkpointInfos,
+	desired, err := p.renderer.renderPodCliqueSet(grovePodCliqueSetRenderRequest{
+		Inputs:       renderInputs,
+		RestartState: restartState,
 	})
 	if err != nil {
-		logger.Error(err, "failed to generate the Grove GangSet")
-		return nil, fmt.Errorf("failed to generate the Grove GangSet: %w", err)
+		logger.Error(err, "failed to generate the Grove PodCliqueSet")
+		return nil, fmt.Errorf("failed to generate the Grove PodCliqueSet: %w", err)
 	}
 
 	_, synced, err := commoncontroller.SyncResource(
@@ -343,69 +383,49 @@ func (p *groveProgram) reconcilePodCliqueSet(
 		},
 	)
 	if err != nil {
-		logger.Error(err, "failed to sync the Grove GangSet")
-		return nil, fmt.Errorf("failed to sync the Grove GangSet: %w", err)
+		logger.Error(err, "failed to sync the Grove PodCliqueSet")
+		return nil, fmt.Errorf("failed to sync the Grove PodCliqueSet: %w", err)
 	}
+	return synced, nil
+}
 
+// observePodCliqueSetReadiness takes the authoritative Grove snapshot after
+// structural and scale reconciliation, then adapts it to the common Resource
+// readiness interface without further Kubernetes reads.
+func (p *groveProgram) observePodCliqueSetReadiness(
+	ctx context.Context,
+	dynamoDeployment *nvidiacomv1beta1.DynamoGraphDeployment,
+	podCliqueSet *grovev1alpha1.PodCliqueSet,
+) (*commoncontroller.Resource, dynamo.GroveReadiness, error) {
+	readiness, err := dynamo.EvaluateGroveReadiness(ctx, p.reconciler.Client, dynamoDeployment)
+	if err != nil {
+		return nil, dynamo.GroveReadiness{}, err
+	}
 	resource, err := commoncontroller.NewResourceWithComponentStatuses(
-		synced,
+		podCliqueSet,
 		func() (bool, string, map[string]nvidiacomv1beta1.ComponentReplicaStatus) {
-			// Grove readiness: all underlying PodCliques and
-			// PodCliqueScalingGroups have replicas == availableReplicas. A
-			// transient read error is handled authoritatively by groveProgram,
-			// which re-evaluates and returns the error so reconciliation retries.
-			allComponentsReady, reason, componentStatuses, readErr :=
-				dynamo.GetComponentReadinessAndServiceReplicaStatuses(ctx, r.Client, dynamoDeployment)
-			if readErr != nil {
-				return false, nvidiacomv1beta1.DGDReadyReasonSomeResourcesNotReady, nil
-			}
-			if !allComponentsReady {
-				return false, reason, componentStatuses
-			}
-			return true, "", componentStatuses
+			return readiness.Ready, readiness.Message, readiness.ComponentStatuses
 		},
 	)
 	if err != nil {
-		logger.Error(err, "failed to create the Grove PodClique Set resource")
-		return nil, fmt.Errorf("failed to create the Grove PodClique Set resource: %w", err)
+		return nil, dynamo.GroveReadiness{}, fmt.Errorf("failed to create the Grove PodCliqueSet resource: %w", err)
 	}
-	return resource, nil
+	return resource, readiness, nil
 }
 
 // checkResourcesReadiness computes the readiness result for the synced Grove
 // resources and overlays the Grove-specific Ready reason classification on a
-// not-ready result. A transient Grove read error is returned so reconciliation
-// retries without advancing ObservedGeneration.
+// not-ready result.
 func (p *groveProgram) checkResourcesReadiness(
-	ctx context.Context,
-	dynamoDeployment *nvidiacomv1beta1.DynamoGraphDeployment,
 	resources []Resource,
-) (ReconcileResult, error) {
+	classification string,
+) ReconcileResult {
 	result := p.reconciler.checkResourcesReadiness(resources)
-	if err := p.applyReadyClassification(ctx, dynamoDeployment, &result); err != nil {
-		return ReconcileResult{}, err
-	}
-	return result, nil
-}
-
-// applyReadyClassification replaces the generic not-ready reason with the
-// Grove-specific classification derived from PodClique and
-// PodCliqueScalingGroup status. Successful results retain the common ready
-// reason.
-func (p *groveProgram) applyReadyClassification(
-	ctx context.Context,
-	dynamoDeployment *nvidiacomv1beta1.DynamoGraphDeployment,
-	result *ReconcileResult,
-) error {
 	if result.State == nvidiacomv1beta1.DGDStateSuccessful {
-		return nil
-	}
-	classification, err := dynamo.ClassifyGroveReadiness(ctx, p.reconciler.Client, dynamoDeployment)
-	if err != nil {
-		return err
+		return result
 	}
 	if classification != "" {
 		result.Reason = Reason(classification)
 	}
-	return nil
+	return result
 }

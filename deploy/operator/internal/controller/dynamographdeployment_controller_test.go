@@ -57,6 +57,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 func newDynamoGraphDeploymentControllerTestScheme(t testing.TB) *runtime.Scheme {
@@ -2799,7 +2800,7 @@ func TestGroveWorkloadRenderer_ResolveInputsPreservesLegacyWorkerSelectors(t *te
 		nil,
 	)
 
-	inputs, err := renderer.resolveInputs(ctx, dgd)
+	inputs, err := renderer.resolveInputs(ctx, dgd, nil)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	g.Expect(inputs.ExistingPodCliqueSet).NotTo(gomega.BeNil())
 	renderDGD := inputs.DGD
@@ -2820,7 +2821,6 @@ func TestGroveWorkloadRenderer_ResolveInputsPreservesLegacyWorkerSelectors(t *te
 	g.Expect(decode.PodTemplate.Labels[commonconsts.KubeLabelDynamoSubComponentType]).To(gomega.Equal(commonconsts.ComponentTypeDecode))
 
 	generatedPCS, err := renderer.renderPodCliqueSet(
-		ctx,
 		grovePodCliqueSetRenderRequest{Inputs: inputs},
 	)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
@@ -3072,8 +3072,13 @@ func TestGroveWorkloadRenderer_ResolveInputsKeepsNativeWorkerSelectors(t *testin
 		WithScheme(newDynamoGraphDeploymentControllerTestScheme(t)).
 		WithObjects(dgd, existingPCS).
 		Build()
-	renderer := newGroveWorkloadRenderer(fakeKubeClient, nil, nil, nil)
-	inputs, err := renderer.resolveInputs(ctx, dgd)
+	renderer := newGroveWorkloadRenderer(
+		fakeKubeClient,
+		&configv1alpha1.OperatorConfiguration{},
+		&controller_common.RuntimeConfig{},
+		nil,
+	)
+	inputs, err := renderer.resolveInputs(ctx, dgd, nil)
 	g.Expect(err).NotTo(gomega.HaveOccurred())
 	prefill := inputs.DGD.GetComponentByName("prefill")
 	if prefill == nil {
@@ -3945,7 +3950,12 @@ func Test_computeRestartStatus(t *testing.T) {
 				},
 			}
 
-			result := reconciler.computeRestartStatus(ctx, dgd)
+			var resolveProgress componentProgressResolver = reconciler.getUpdatedInProgressForComponent
+			if tt.groveEnabled {
+				resolveProgress = newGroveStatusResolver(reconciler.Client, reconciler.Recorder).
+					getUpdatedInProgress
+			}
+			result := reconciler.computeRestartStatusWithProgressResolver(ctx, dgd, resolveProgress)
 
 			if tt.wantRestartStatus == nil {
 				g.Expect(result).To(gomega.BeNil())
@@ -4601,7 +4611,7 @@ func TestComponentProgram_ReconcileWorkloads(t *testing.T) {
 	}
 }
 
-func TestPropagateTopologyCondition(t *testing.T) {
+func TestGroveStatusResolver_ProjectTopologyCondition(t *testing.T) {
 	tests := []struct {
 		name           string
 		dgd            *v1beta1.DynamoGraphDeployment
@@ -4613,13 +4623,20 @@ func TestPropagateTopologyCondition(t *testing.T) {
 		wantEventCount int
 	}{
 		{
-			name: "no topology constraints - no condition added",
+			name: "removed topology constraints clear the previous condition",
 			dgd: betaDGD(t, &v1alpha1.DynamoGraphDeployment{
 				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
 				Spec: v1alpha1.DynamoGraphDeploymentSpec{
 					Services: map[string]*v1alpha1.DynamoComponentDeploymentSharedSpec{
 						"worker": {},
 					},
+				},
+				Status: v1alpha1.DynamoGraphDeploymentStatus{
+					Conditions: []metav1.Condition{{
+						Type:   v1alpha1.ConditionTypeTopologyLevelsAvailable,
+						Status: metav1.ConditionTrue,
+						Reason: v1alpha1.ConditionReasonAllTopologyLevelsAvailable,
+					}},
 				},
 			}),
 			groveEnabled:  true,
@@ -4799,12 +4816,18 @@ func TestPropagateTopologyCondition(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			reconciler.propagateTopologyCondition(ctx, tt.dgd)
+			originalStatus := tt.dgd.DeepCopy().Status
+			status := tt.dgd.DeepCopy().Status
+			if tt.groveEnabled {
+				newGroveStatusResolver(reconciler.Client, reconciler.Recorder).
+					projectTopologyCondition(ctx, tt.dgd, &status)
+			}
+			g.Expect(tt.dgd.Status).To(gomega.Equal(originalStatus), "status projection must not mutate request.DGD.Status")
 
 			var topoCond *metav1.Condition
-			for i := range tt.dgd.Status.Conditions {
-				if tt.dgd.Status.Conditions[i].Type == v1alpha1.ConditionTypeTopologyLevelsAvailable {
-					topoCond = &tt.dgd.Status.Conditions[i]
+			for i := range status.Conditions {
+				if status.Conditions[i].Type == v1alpha1.ConditionTypeTopologyLevelsAvailable {
+					topoCond = &status.Conditions[i]
 					break
 				}
 			}
@@ -4828,7 +4851,40 @@ func TestPropagateTopologyCondition(t *testing.T) {
 	}
 }
 
-func TestMapPodCliqueScalingGroupToRequests(t *testing.T) {
+func TestGroveWatchSetup_MapPodCliqueToRequests(t *testing.T) {
+	setup := newGroveWatchSetup(nil)
+
+	t.Run("labeled PodClique maps directly to its DGD", func(t *testing.T) {
+		requests := setup.mapPodCliqueToRequests(
+			context.Background(),
+			&grovev1alpha1.PodClique{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "graph-0-worker",
+					Namespace: "default",
+					Labels: map[string]string{
+						commonconsts.KubeLabelDynamoGraphDeploymentName: "graph",
+					},
+				},
+			},
+		)
+
+		require.Len(t, requests, 1)
+		assert.Equal(t, types.NamespacedName{Namespace: "default", Name: "graph"}, requests[0].NamespacedName)
+	})
+
+	t.Run("unlabeled or unrelated objects are ignored", func(t *testing.T) {
+		assert.Empty(t, setup.mapPodCliqueToRequests(
+			context.Background(),
+			&grovev1alpha1.PodClique{ObjectMeta: metav1.ObjectMeta{Name: "orphan", Namespace: "default"}},
+		))
+		assert.Empty(t, setup.mapPodCliqueToRequests(
+			context.Background(),
+			&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "not-a-podclique", Namespace: "default"}},
+		))
+	})
+}
+
+func TestGroveWatchSetup_MapPodCliqueScalingGroupToRequests(t *testing.T) {
 	// Register Grove types with the scheme so fake client can handle them
 	if err := grovev1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		t.Fatalf("Failed to add grovev1alpha1 to scheme: %v", err)
@@ -4980,7 +5036,8 @@ func TestMapPodCliqueScalingGroupToRequests(t *testing.T) {
 			r := &DynamoGraphDeploymentReconciler{
 				Client: builder.Build(),
 			}
-			reqs := r.mapPodCliqueScalingGroupToRequests(context.Background(), tt.obj)
+			reqs := newGroveWatchSetup(r.Client).
+				mapPodCliqueScalingGroupToRequests(context.Background(), tt.obj)
 
 			g.Expect(reqs).To(gomega.HaveLen(tt.wantRequests))
 			if tt.wantRequests == 1 {
@@ -5054,6 +5111,11 @@ func TestPodCliqueStatusChangeIsSignificant(t *testing.T) {
 			want:   true,
 		},
 		{
+			name:   "generation change is significant",
+			mutate: func(pc *grovev1alpha1.PodClique) { pc.Generation = 2 },
+			want:   true,
+		},
+		{
 			name: "scheduling condition change is significant",
 			mutate: func(pc *grovev1alpha1.PodClique) {
 				pc.Status.Conditions = []metav1.Condition{{
@@ -5075,6 +5137,17 @@ func TestPodCliqueStatusChangeIsSignificant(t *testing.T) {
 			assert.Equal(t, tt.want, podCliqueStatusChangeIsSignificant(oldPC, newPC))
 		})
 	}
+
+	oldPodClique := base()
+	oldPodClique.Status.Conditions = []metav1.Condition{{
+		Type:    groveconstants.ConditionTypePodCliqueScheduled,
+		Status:  metav1.ConditionFalse,
+		Reason:  groveconstants.ConditionReasonInsufficientScheduledPods,
+		Message: "one node unavailable",
+	}}
+	newPodClique := oldPodClique.DeepCopy()
+	newPodClique.Status.Conditions[0].Message = "two nodes unavailable"
+	assert.True(t, podCliqueStatusChangeIsSignificant(oldPodClique, newPodClique))
 }
 
 func TestPCSGStatusChangeIsSignificant(t *testing.T) {
@@ -5132,6 +5205,11 @@ func TestPCSGStatusChangeIsSignificant(t *testing.T) {
 			want:   true,
 		},
 		{
+			name:   "generation change is significant",
+			mutate: func(pcsg *grovev1alpha1.PodCliqueScalingGroup) { pcsg.Generation = 2 },
+			want:   true,
+		},
+		{
 			name: "MinAvailableBreached condition change is significant",
 			mutate: func(pcsg *grovev1alpha1.PodCliqueScalingGroup) {
 				pcsg.Status.Conditions = []metav1.Condition{{
@@ -5153,4 +5231,29 @@ func TestPCSGStatusChangeIsSignificant(t *testing.T) {
 			assert.Equal(t, tt.want, pcsgStatusChangeIsSignificant(oldPCSG, newPCSG))
 		})
 	}
+
+	oldScalingGroup := base()
+	oldScalingGroup.Status.Conditions = []metav1.Condition{{
+		Type:    groveconstants.ConditionTypeMinAvailableBreached,
+		Status:  metav1.ConditionFalse,
+		Reason:  groveconstants.ConditionReasonInsufficientAvailablePCSGReplicas,
+		Message: "one replica unavailable",
+	}}
+	newScalingGroup := oldScalingGroup.DeepCopy()
+	newScalingGroup.Status.Conditions[0].Message = "two replicas unavailable"
+	assert.True(t, pcsgStatusChangeIsSignificant(oldScalingGroup, newScalingGroup))
+}
+
+func TestGroveChildEventPredicates(t *testing.T) {
+	podClique := &grovev1alpha1.PodClique{}
+	podCliquePredicates := podCliqueEventPredicates()
+	assert.True(t, podCliquePredicates.Create(event.CreateEvent{Object: podClique}))
+	assert.True(t, podCliquePredicates.Delete(event.DeleteEvent{Object: podClique}))
+	assert.False(t, podCliquePredicates.Generic(event.GenericEvent{Object: podClique}))
+
+	scalingGroup := &grovev1alpha1.PodCliqueScalingGroup{}
+	scalingGroupPredicates := pcsgEventPredicates()
+	assert.True(t, scalingGroupPredicates.Create(event.CreateEvent{Object: scalingGroup}))
+	assert.True(t, scalingGroupPredicates.Delete(event.DeleteEvent{Object: scalingGroup}))
+	assert.False(t, scalingGroupPredicates.Generic(event.GenericEvent{Object: scalingGroup}))
 }

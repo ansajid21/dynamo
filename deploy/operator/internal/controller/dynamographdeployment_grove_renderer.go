@@ -40,48 +40,52 @@ import (
 // resolve and render a Grove PodCliqueSet. It does not reconcile resources,
 // register watches, own finalizers, or write status.
 //
-// Some existing rendering helpers still resolve Kubernetes-backed inputs such
-// as topology and checkpoint data. Keeping those dependencies explicit here
-// creates the seam needed to separate resolution from pure rendering later
-// without hiding I/O behind the workload-program contract.
+// resolveInputs performs Kubernetes-backed observation. renderPodCliqueSet
+// consumes the resulting facts and does not read Kubernetes resources, keeping
+// I/O out of desired-object construction.
 type groveWorkloadRenderer struct {
-	client.Client
-	config                *configv1alpha1.OperatorConfiguration
-	runtimeConfig         *commoncontroller.RuntimeConfig
-	dockerSecretRetriever dockerSecretRetriever
+	reader                 client.Reader
+	config                 *configv1alpha1.OperatorConfiguration
+	runtimeConfig          *commoncontroller.RuntimeConfig
+	dockerSecretRetriever  dockerSecretRetriever
+	schedulerQueueResolver dynamo.GroveSchedulerQueueResolver
 }
 
 func newGroveWorkloadRenderer(
-	kubeClient client.Client,
+	reader client.Reader,
 	config *configv1alpha1.OperatorConfiguration,
 	runtimeConfig *commoncontroller.RuntimeConfig,
 	dockerSecretRetriever dockerSecretRetriever,
 ) *groveWorkloadRenderer {
 	return &groveWorkloadRenderer{
-		Client:                kubeClient,
-		config:                config,
-		runtimeConfig:         runtimeConfig,
-		dockerSecretRetriever: dockerSecretRetriever,
+		reader:                 reader,
+		config:                 config,
+		runtimeConfig:          runtimeConfig,
+		dockerSecretRetriever:  dockerSecretRetriever,
+		schedulerQueueResolver: dynamo.DetermineKaiSchedulerQueue,
 	}
 }
 
 // groveRenderInputs are observations established before desired-object
-// rendering. Keeping the existing PodCliqueSet explicit makes compatibility
-// transformations and replica preservation visible to the caller.
+// rendering. Keeping provider facts and the existing PodCliqueSet explicit
+// makes Kubernetes reads, compatibility transformations, and replica
+// preservation visible to the caller.
 type groveRenderInputs struct {
 	DGD                  *nvidiacomv1beta1.DynamoGraphDeployment
 	ExistingPodCliqueSet *grovev1alpha1.PodCliqueSet
+	Facts                dynamo.GrovePodCliqueSetRenderFacts
+	CheckpointInfos      map[string]*checkpoint.CheckpointInfo
 }
 
 type grovePodCliqueSetRenderRequest struct {
-	Inputs          groveRenderInputs
-	RestartState    *dynamo.RestartState
-	CheckpointInfos map[string]*checkpoint.CheckpointInfo
+	Inputs       groveRenderInputs
+	RestartState *dynamo.RestartState
 }
 
 func (r *groveWorkloadRenderer) resolveInputs(
 	ctx context.Context,
 	dgd *nvidiacomv1beta1.DynamoGraphDeployment,
+	checkpointInfos map[string]*checkpoint.CheckpointInfo,
 ) (groveRenderInputs, error) {
 	existingPodCliqueSet, err := r.getExistingPodCliqueSet(ctx, dgd)
 	if err != nil {
@@ -100,14 +104,27 @@ func (r *groveWorkloadRenderer) resolveInputs(
 		}
 	}
 
+	facts, err := dynamo.ResolveGrovePodCliqueSetRenderFacts(ctx, dynamo.GrovePodCliqueSetRenderFactsRequest{
+		DGD:                    renderDeployment,
+		OperatorConfig:         r.config,
+		RuntimeConfig:          r.runtimeConfig,
+		Reader:                 r.reader,
+		CheckpointInfos:        checkpointInfos,
+		SchedulerQueueResolver: r.schedulerQueueResolver,
+	})
+	if err != nil {
+		return groveRenderInputs{}, err
+	}
+
 	return groveRenderInputs{
 		DGD:                  renderDeployment,
 		ExistingPodCliqueSet: existingPodCliqueSet,
+		Facts:                facts,
+		CheckpointInfos:      checkpointInfos,
 	}, nil
 }
 
 func (r *groveWorkloadRenderer) renderPodCliqueSet(
-	ctx context.Context,
 	req grovePodCliqueSetRenderRequest,
 ) (*grovev1alpha1.PodCliqueSet, error) {
 	renderDeployment := req.Inputs.DGD
@@ -117,24 +134,23 @@ func (r *groveWorkloadRenderer) renderPodCliqueSet(
 
 	existingPodCliqueSet := req.Inputs.ExistingPodCliqueSet
 	existingRestartAnnotations := restartAnnotationsFromPodCliqueSet(existingPodCliqueSet)
-	desired, err := dynamo.GenerateGrovePodCliqueSet(
-		ctx,
-		renderDeployment,
-		r.config,
-		r.runtimeConfig,
-		r.Client,
-		r.dockerSecretRetriever,
-		req.RestartState,
-		existingRestartAnnotations,
-		req.CheckpointInfos,
-	)
+	desired, err := dynamo.RenderGrovePodCliqueSet(dynamo.GrovePodCliqueSetRenderRequest{
+		DGD:                        renderDeployment,
+		OperatorConfig:             r.config,
+		RuntimeConfig:              r.runtimeConfig,
+		SecretsRetriever:           r.dockerSecretRetriever,
+		RestartState:               req.RestartState,
+		ExistingRestartAnnotations: existingRestartAnnotations,
+		CheckpointInfos:            req.Inputs.CheckpointInfos,
+		Facts:                      req.Inputs.Facts,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	prepareGroveTopologyConstraintUpgrade(desired, existingPodCliqueSet)
 	preserveGrovePodCliqueSetOrder(desired, existingPodCliqueSet)
-	preserveGrovePodCliqueSetReplicas(desired, existingPodCliqueSet, req.CheckpointInfos)
+	preserveGrovePodCliqueSetReplicas(desired, existingPodCliqueSet, req.Inputs.CheckpointInfos)
 	return desired, nil
 }
 
@@ -143,7 +159,7 @@ func (r *groveWorkloadRenderer) getExistingPodCliqueSet(
 	dgd *nvidiacomv1beta1.DynamoGraphDeployment,
 ) (*grovev1alpha1.PodCliqueSet, error) {
 	pcs := &grovev1alpha1.PodCliqueSet{}
-	err := r.Get(
+	err := r.reader.Get(
 		ctx,
 		types.NamespacedName{
 			Name:      dynamo.PCSNameForDGD(dgd.Name, dgd.Spec.Components),

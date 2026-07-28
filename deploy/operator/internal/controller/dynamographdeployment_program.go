@@ -67,6 +67,12 @@ type programRestart struct {
 	Status *nvidiacomv1beta1.RestartStatus
 }
 
+type componentProgressResolver func(
+	context.Context,
+	*nvidiacomv1beta1.DynamoGraphDeployment,
+	[]string,
+) []string
+
 type workloadReconcileRequest struct {
 	DGD             *nvidiacomv1beta1.DynamoGraphDeployment
 	RestartState    *dynamo.RestartState
@@ -163,7 +169,12 @@ func (p *componentProgram) Reconcile(
 		)
 		return programResult, fmt.Errorf("failed to reconcile Dynamo components deployments: %w", err)
 	}
-	restart := p.reconciler.resolveProgramRestartState(ctx, req.DGD, programResult.Status)
+	restart := p.reconciler.resolveProgramRestartState(
+		ctx,
+		req.DGD,
+		programResult.Status,
+		p.reconciler.getUpdatedInProgressForComponent,
+	)
 
 	result, err := p.reconcileWorkloads(ctx, workloadReconcileRequest{
 		DGD:             req.DGD,

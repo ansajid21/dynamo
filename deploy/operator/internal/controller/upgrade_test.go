@@ -805,14 +805,13 @@ spec:
 						&controller_common.RuntimeConfig{},
 						nil,
 					)
-					inputs, err := renderer.resolveInputs(ctx, dgd)
+					inputs, err := renderer.resolveInputs(ctx, dgd, nil)
 					require.NoError(t, err)
 					require.NotNil(t, inputs.ExistingPodCliqueSet)
 					renderDGD := inputs.DGD
 
 					t.Log("generate the desired Grove PodCliqueSet from the prepared render deployment")
 					pcs, err := renderer.renderPodCliqueSet(
-						ctx,
 						grovePodCliqueSetRenderRequest{Inputs: inputs},
 					)
 					require.NoError(t, err)
@@ -938,14 +937,13 @@ func TestGroveNativeWorkerIdentityLabelsStayNative(t *testing.T) {
 		&controller_common.RuntimeConfig{},
 		nil,
 	)
-	inputs, err := renderer.resolveInputs(ctx, dgd)
+	inputs, err := renderer.resolveInputs(ctx, dgd, nil)
 	require.NoError(t, err)
 	require.NotNil(t, inputs.ExistingPodCliqueSet)
 	renderDGD := inputs.DGD
 
 	t.Log("generate the desired PodCliqueSet from the prepared native render deployment")
 	desired, err := renderer.renderPodCliqueSet(
-		ctx,
 		grovePodCliqueSetRenderRequest{Inputs: inputs},
 	)
 	require.NoError(t, err)
