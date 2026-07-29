@@ -741,6 +741,8 @@ redirects:
     destination: "/dynamo/dev/diffusion/overview"
   - source: "/dynamo/dev/use-cases/diffusion/:slug*"
     destination: "/dynamo/dev/diffusion/overview/:slug*"
+  - source: "/dynamo/dev/parsing/introduction"
+    destination: "/dynamo/dev/parsing/overview"
   - source: "/dynamo/dev/other-features/parsing"
     destination: "/dynamo/dev/parsing/tool-call-parsing"
   - source: "/dynamo/dev/other-features/parsing/:slug*"

@@ -8,7 +8,7 @@ description: Span a single model across multiple nodes with the CLI
 
 When a model's tensor-parallel size exceeds the number of GPUs on one node, you split a single worker across **multiple nodes**. This is not limited to Kubernetes — vLLM and SGLang can run this topology directly with the CLI. One node acts as the **head** (running the frontend and rank 0), and additional nodes join the same distributed worker group.
 
-Reach for this only when one model copy genuinely does not fit on a single node. If it fits on one node, stay [single-node](overview.mdx#multiple-gpus-on-one-node) — tensor parallelism synchronizes on every layer, and crossing the node boundary trades the fast intra-node NVLink interconnect for slower inter-node networking.
+Reach for this only when one model copy genuinely does not fit on a single node. If it fits on one node, stay [single-node](deployment-guide.mdx#more-on-one-node) — tensor parallelism synchronizes on every layer, and crossing the node boundary trades the fast intra-node NVLink interconnect for slower inter-node networking.
 
 <Note>
 For spanning **multiple machines**, we recommend [Kubernetes](../../kubernetes/model-deployment/multinode-deployments.md) instead — it handles the cross-node scheduling, networking, and fault tolerance for you. The CLI path documented here works and is fully real, but you own placement and restarts by hand. Use it if you're set on the CLI for a fixed set of machines you control.
@@ -64,7 +64,7 @@ python -m dynamo.vllm --model <model> \
 
       </Step>
       <Step title="Verify the deployment">
-        The head node's worker registers with the frontend as usual; the headless workers contribute their GPUs to the tensor-parallel group but do not run their own ingress. Once every node has joined and the model has loaded, send requests to the frontend on the head node exactly as in the [single-node tutorial](overview.mdx#tutorial-serve-a-model-locally).
+        The head node's worker registers with the frontend as usual; the headless workers contribute their GPUs to the tensor-parallel group but do not run their own ingress. Once every node has joined and the model has loaded, send requests to the frontend on the head node exactly as in the [single-node tutorial](deployment-guide.mdx).
       </Step>
     </Steps>
   </Tab>
@@ -103,7 +103,7 @@ python -m dynamo.sglang \
 
       </Step>
       <Step title="Verify the deployment">
-        Wait for every rank to join and for the model to finish loading. Then send requests to port 8000 on the head node as shown in the [single-node tutorial](overview.mdx#tutorial-serve-a-model-locally).
+        Wait for every rank to join and for the model to finish loading. Then send requests to port 8000 on the head node as shown in the [single-node tutorial](deployment-guide.mdx).
       </Step>
     </Steps>
   </Tab>
@@ -144,7 +144,7 @@ The tensor-parallel size is the total number of GPUs in the group, but on multi-
 - **Tensor parallelism across nodes** (as above, TP=16 over 2 nodes) treats a node *pair* as a single TP domain. This is the simplest to launch and matches the preset, but every layer's all-reduce now crosses the node boundary — it works well only when the inter-node link is fast (RDMA/InfiniBand).
 - **Tensor parallelism within each node, pipeline parallelism across nodes** (for example TP=8 per node × PP=2) keeps the chatty per-layer all-reduce on NVLink inside each node and only communicates at pipeline-stage boundaries between nodes. This tolerates slower inter-node links at the cost of pipeline bubbles, and is often the safer default for larger clusters.
 
-Both hold exactly one copy of the model — tensor and pipeline parallelism partition the weights without duplicating them. See [Scaling to larger models and more GPUs](overview.mdx#scaling-to-larger-models-and-more-gpus) for how to size the GPU pool.
+Both hold exactly one copy of the model — tensor and pipeline parallelism partition the weights without duplicating them. See [Scaling to larger models and more GPUs](deployment-guide.mdx#scaling-and-larger-deployments) for how to size the GPU pool.
 
 ## Next steps
 
