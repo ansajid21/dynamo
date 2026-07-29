@@ -12,7 +12,7 @@ For how routing decisions are made, see [Routing Concepts](../../developer-guide
 
 ## How it works locally
 
-A KV-routed deployment is still just a frontend plus workers (see the [Introduction](overview.mdx)), with two differences:
+A KV-routed deployment is still just a frontend plus workers (see the [Overview](overview.mdx)), with two differences:
 
 - The **frontend** runs in KV routing mode so it tracks cache state across workers.
 - Each **worker** publishes KV cache events (over ZMQ by default) so the frontend knows what each worker holds.

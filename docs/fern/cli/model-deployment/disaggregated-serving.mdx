@@ -12,7 +12,7 @@ For the architecture and when to use it, see [Disaggregated Serving](../../kuber
 
 ## How it works locally
 
-A disaggregated deployment is still a frontend plus workers (see the [Introduction](overview.mdx)), except instead of one worker doing both phases, you run:
+A disaggregated deployment is still a frontend plus workers (see the [Overview](overview.mdx)), except instead of one worker doing both phases, you run:
 
 - A **prefill worker** — computes the prompt's KV cache.
 - A **decode worker** — receives the KV cache over NIXL and generates tokens.

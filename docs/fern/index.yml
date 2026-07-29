@@ -137,7 +137,6 @@ navigation:
         collapsed: open-by-default
         contents:
           - page: Overview
-            slug: introduction
             path: kubernetes/model-deployment/overview.mdx
           - page: Deploy with DGD
             path: kubernetes/model-deployment/deploy-with-dgd.md
@@ -262,7 +261,6 @@ navigation:
         collapsed: open-by-default
         contents:
           - page: Overview
-            slug: introduction
             path: cli/model-deployment/overview.mdx
           - page: KV-Aware Routing
             path: cli/model-deployment/kv-aware-routing.mdx
