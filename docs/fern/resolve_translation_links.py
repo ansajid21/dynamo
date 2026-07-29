@@ -26,25 +26,11 @@ page links in docs/fern/translations/<lang>/pages/** to root-relative site
 URLs, computed from the *current* nav on every publish so they cannot go
 stale when pages move.
 
-Layout note (PR #10855, docs/ + fern/ consolidated into docs/fern/):
-The Fern config root is docs/fern/. The nav (docs/fern/index.yml) references
-base pages by paths relative to docs/fern/ (e.g. getting-started/quickstart.mdx),
-and Fern's localization expects translations mirrored at
-docs/fern/translations/<lang>/pages/<same-path>. The translated source content
-was authored against the old docs/<path> tree, so its deep-relative links still
-read "../../../../../docs/<rel>"; the resolver interprets that "docs/<rel>"
-against the new nav root (docs/fern/<rel>), which is correct because the PR
-preserved the docs subtree structure under docs/fern/. Base pages that were
-renamed, moved, or consolidated in the new nav (e.g. reference/support-matrix ->
-reference/compatibility) have no 1:1 target; those links degrade to the GitHub
-source (when the old path still exists in the repo) or are left as-is.
-
 Source-repo convention (docs/fern/translations/<lang>/pages/<path> mirrors
 docs/fern/<path>):
-  - links to translated siblings stay shallow-relative (quickstart.mdx)
-  - links to untranslated pages are deep-relative into the base tree
-    (../../../../../docs/reference/compatibility.md), so they stay valid for the
-    repo link checker and GitHub browsing
+  - links to translated pages are relative within the locale mirror
+  - links to untranslated pages are relative from the translated source file
+    back to the docs/fern/ base tree
   - image refs are left alone and NOT copied into the mirror -- Fern
     resolves them against the base page location, so copies would only drift
 
@@ -85,11 +71,6 @@ import yaml
 LINK = re.compile(r"(!?)(\[[^\]]*\])\(([^)#\s]+)(#[^)]*)?\)")
 PAGE_EXT = (".md", ".mdx")
 GITHUB_REPO_BLOB = "https://github.com/ai-dynamo/dynamo/blob"
-# Base pages live under docs/fern/ in the new layout; the deep-relative links
-# in translated content were authored against the old docs/ tree root, whose
-# subtree the PR preserved under docs/fern/. This is the marker segment the
-# resolver strips to recover a nav-relative path.
-BASE_TREE_MARKER = "docs"
 
 
 def slugify(name: str) -> str:
@@ -234,14 +215,13 @@ def main() -> int:
             if page.suffix not in PAGE_EXT or not page.is_file():
                 continue
             rel = page.relative_to(pages_root)  # mirrors docs/fern/<rel>
-            # Links were authored from fern/translations/<lang>/pages-dev/<rel>
-            # in the source repo; the mirror depth is unchanged here (pages is
-            # a single segment like the old pages-dev), so the deep-relative
-            # arithmetic still lands on the base-tree marker.
+            # Model paths from the docs/fern root. A shallow relative link can
+            # remain inside the locale mirror; a deeper relative link can walk
+            # back to a base page under docs/fern/.
             virtual_dir = (
-                PurePosixPath("fern/translations") / lang / args.pages_dir / rel.parent
+                PurePosixPath("translations") / lang / args.pages_dir / rel.parent
             )
-            mirror_prefix = PurePosixPath("fern/translations") / lang / args.pages_dir
+            mirror_prefix = PurePosixPath("translations") / lang / args.pages_dir
 
             def resolve_doc_rel(target: str):
                 """Normalize an authored target to a nav-relative doc path.
@@ -252,8 +232,10 @@ def main() -> int:
                 q = PurePosixPath(os.path.normpath(str(virtual_dir / target)))
                 if q.is_relative_to(mirror_prefix):
                     return str(q.relative_to(mirror_prefix)), False
-                if q.is_relative_to(BASE_TREE_MARKER):
-                    return str(q.relative_to(BASE_TREE_MARKER)), False
+                # A normalized path without a leading ``..`` is still inside
+                # docs/fern and is therefore relative to the base nav root.
+                if not q.parts or q.parts[0] != "..":
+                    return str(q), False
                 return None, True
 
             def lookup(doc_rel: str):

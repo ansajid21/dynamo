@@ -3,7 +3,7 @@
 #
 id: qwen3-vl-embedding-cache
 title: Qwen3-VL Embedding Cache A/B
-page: benchmarks/qwen3-vl-embedding-cache.mdx
+page: recipes/feature-benchmarks/qwen3-vl-embedding-cache.mdx
 claim: Enabling the multimodal embedding cache on one GB200 vLLM replica gives +16.4% output TPS, -27.7% TTFT avg, -13.4%
   request latency on 80%-image-reuse traffic
 subtype: ab-test

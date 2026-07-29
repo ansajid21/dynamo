@@ -3,4 +3,4 @@
 
 # vLLM
 
-See [docs/backends/vllm/](../../../../docs/fern/backends/vllm/README.md) for documentation.
+See [docs/backends/vllm/](../../../../docs/fern/developer-guide/knowledge-base/modular-components/backends/vllm/overview.md) for documentation.

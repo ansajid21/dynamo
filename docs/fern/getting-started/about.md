@@ -14,7 +14,7 @@ standalone components for development or incremental adoption.
 This page gives an overview of Dynamo's design principles, performance benefits, and production-grade features.
 
 > [!TIP]
-> Looking to get started right away? See the [Quickstart](quickstart.mdx) to install and run Dynamo in minutes.
+> Looking to get started right away? See the [Quickstart](../cli/getting-started/quickstart.mdx) to install and run Dynamo in minutes.
 
 ## Why Dynamo?
 
@@ -50,7 +50,7 @@ pip install nixl
 ```
 
 > [!NOTE]
-> Pre-built containers with all dependencies are also available. See [Release Artifacts](../reference/release-artifacts.mdx) for container images.
+> Pre-built containers with all dependencies are also available. See [Release Artifacts](../reference/general/release-artifacts.mdx) for container images.
 
 The Dynamo ecosystem includes these additional modular components, and will continue to grow over time:
 
@@ -63,7 +63,7 @@ The Dynamo ecosystem includes these additional modular components, and will cont
 | **Scaling / Cloud** | Planner | Automatically tune performance in real time for prefill and decode given SLA constraints (TTFT and TPOT) |
 | | [Grove](https://github.com/ai-dynamo/grove) | Enables gang scheduling and topology awareness required for Kubernetes multi-node disaggregated serving |
 | | [Model Express](https://github.com/ai-dynamo/model-express) | Load model weights fast by caching and transferring them via NIXL to other GPUs. Will also be leveraged for fault tolerance |
-| **Perf** | [DynoSim](../dynosim/README.md) | Simulate Dynamo deployment choices with Mocker, workload-driven runs, sweeps, and AIC-backed timing models before validating on GPUs |
+| **Perf** | [DynoSim](../shared/dynosim/overview.md) | Simulate Dynamo deployment choices with Mocker, workload-driven runs, sweeps, and AIC-backed timing models before validating on GPUs |
 | | [AIConfigurator](https://github.com/ai-dynamo/aiconfigurator) | Provides calibrated performance models and configuration search inputs for rapid DGDR profiling. Formerly known as LLMPet |
 | | [AIPerf](https://github.com/ai-dynamo/aiperf) | Re-architected GenAI-Perf written in Python for maximum extensibility; supports distributed benchmarking |
 | | AITune | Given a model or pipeline, searches for best backend to deploy with (e.g., TensorRT, Torch.compile, etc.) (coming soon) |
@@ -85,8 +85,8 @@ The full list of supported ecosystem components:
 | :--- | :--- |
 | Inference engines | SGLang, TensorRT-LLM, vLLM |
 | Kubernetes | Inference gateway |
-| Memory management | [Dynamo KV Block Manager, LMCache, SGLang HiCache, and FlexKV](../cli/kv-cache-offloading.mdx) |
-| Networking and storage | Mooncake, DOCA NetIO, GDS, POSIX, S3, 3FS ([supported via NIXL](../design-docs/kvbm-design.md)) |
+| Memory management | [Dynamo KV Block Manager, LMCache, SGLang HiCache, and FlexKV](../cli/model-deployment/kv-cache-offloading.mdx) |
+| Networking and storage | Mooncake, DOCA NetIO, GDS, POSIX, S3, 3FS ([supported via NIXL](../developer-guide/knowledge-base/modular-components/kvbm/kvbm-design.md)) |
 | Multi-HW | Intel XPU, AMD |
 
 ## Deployment Posture
@@ -110,17 +110,17 @@ routing happens.
 
 - **Gateway mode (GAIE)** -- Dynamo runs behind a Kubernetes [Gateway API Inference Extension](https://gateway-api-inference-extension.sigs.k8s.io/) gateway. KV-aware routing is performed at the gateway layer by the Dynamo Endpoint Picker Plugin (EPP); the Frontend runs as a sidecar in `--router-mode direct` and forwards requests to the worker the EPP selected. Use this mode when your platform standardizes on the Inference Gateway, or when you want gateway-level policy (auth, rate limiting, observability) co-located with KV-aware routing. Request flow: `client -> Inference Gateway -> EPP (KV-aware) -> Frontend sidecar (direct) -> workers`.
 
-Both modes support disaggregated serving and the same backend integrations. Compare them in [KV-Aware Routing on Kubernetes](../kubernetes/kv-aware-routing.md), then follow the topology-specific setup page.
+Both modes support disaggregated serving and the same backend integrations. Compare them in [KV-Aware Routing on Kubernetes](../kubernetes/kv-aware-routing/overview.md), then follow the topology-specific setup page.
 
 ## Performance
 
 Dynamo achieves state-of-the-art LLM performance by composing three core techniques: Disaggregated Serving, KV Cache-Aware Routing, and KV Cache Offloading. These techniques are underpinned by NIXL, a low-latency data transfer layer that enables seamless KV cache movement between nodes.
 
-- [KV cache-aware routing](../design-docs/router-design.md) Smartly routes requests based on worker load and existing cache hits. By reusing precomputed KV pairs, it bypasses the prefill compute, starting the decode phase immediately. [Baseten](https://www.baseten.co/blog/how-baseten-achieved-2x-faster-inference-with-nvidia-dynamo/#how-baseten-uses-nvidia-dynamo) applied Dynamo KV cache-aware routing and saw 2x faster TTFT and 1.6x throughput on Qwen3 Coder 480B A35B.
+- [KV cache-aware routing](../developer-guide/knowledge-base/modular-components/router/router-design.md) Smartly routes requests based on worker load and existing cache hits. By reusing precomputed KV pairs, it bypasses the prefill compute, starting the decode phase immediately. [Baseten](https://www.baseten.co/blog/how-baseten-achieved-2x-faster-inference-with-nvidia-dynamo/#how-baseten-uses-nvidia-dynamo) applied Dynamo KV cache-aware routing and saw 2x faster TTFT and 1.6x throughput on Qwen3 Coder 480B A35B.
 
-- [KV cache offloading](../design-docs/kvbm-design.md) Expands the available context window by moving KV cache from HBM to cheaper storage tiers such as host memory, local disk, or remote storage. Reusing precomputed state improves TTFT, reduces Total Cost of Ownership (TCO), and allows for longer context processing.
+- [KV cache offloading](../developer-guide/knowledge-base/modular-components/kvbm/kvbm-design.md) Expands the available context window by moving KV cache from HBM to cheaper storage tiers such as host memory, local disk, or remote storage. Reusing precomputed state improves TTFT, reduces Total Cost of Ownership (TCO), and allows for longer context processing.
 
-- [Disaggregated serving](../design-docs/disagg-serving.md) In the Design Principles section, we introduced the concept of disaggregated serving. Its performance has been showcased by [InferenceX](https://newsletter.semianalysis.com/p/inferencex-v2-nvidia-blackwell-vs). DeepSeek V3 can be served with ~7x throughput/GPU, with disaggregated serving and large-scale expert parallelism.
+- [Disaggregated serving](../developer-guide/knowledge-base/concepts/system-architecture/disaggregated-serving.md) In the Design Principles section, we introduced the concept of disaggregated serving. Its performance has been showcased by [InferenceX](https://newsletter.semianalysis.com/p/inferencex-v2-nvidia-blackwell-vs). DeepSeek V3 can be served with ~7x throughput/GPU, with disaggregated serving and large-scale expert parallelism.
 Furthermore, when these three techniques are composed together, they yield compounding benefits as shown in the following diagram.
 
 ![Performance composability of disaggregated serving, KV cache-aware routing, and KV cache offloading](../assets/img/intro-perf.svg)
@@ -144,9 +144,9 @@ Dynamo uses AIC-backed DynoSim-style modeling to identify strong configurations 
 
 Once the offline configuration is found with AIConfigurator or DGDR, developers can deploy their desired model into production. However, the production traffic can vary greatly online, and static configuration determined offline will not be able to adequately handle spikes in traffic.
 
-Dynamo offers [Planner](../design-docs/planner-design.md) to circumvent this problem. Developers can simply set their SLA in terms of TTFT and Time Per Output Token (TPOT). Planner examines online traffic and automatically makes decisions to scale prefill and decode workers to effectively deal with traffic spikes while maintaining the specified SLA.
+Dynamo offers [Planner](../developer-guide/knowledge-base/modular-components/planner/planner-design.md) to circumvent this problem. Developers can simply set their SLA in terms of TTFT and Time Per Output Token (TPOT). Planner examines online traffic and automatically makes decisions to scale prefill and decode workers to effectively deal with traffic spikes while maintaining the specified SLA.
 
-Recently, Planner was expanded to deal with even more sophisticated scenarios such as drastically varying Input Sequence Length (ISL) given the same SLA. See the [Planner documentation](../components/planner/planner-guide.md) for more details.
+Recently, Planner was expanded to deal with even more sophisticated scenarios such as drastically varying Input Sequence Length (ISL) given the same SLA. See the [Planner documentation](../developer-guide/knowledge-base/modular-components/planner/planner-guide.md) for more details.
 
 ### Applying Topology-Aware Hierarchical Gang Scheduling with Grove
 
@@ -176,19 +176,19 @@ Kubernetes comes with some fault tolerance functionalities, but LLM deployment r
 ### Observability
 
 Dynamo provides built-in metrics, distributed tracing, and logging for monitoring inference
-deployments. For a local deployment, see [Install Observability](../cli/observability.mdx).
+deployments. For a local deployment, see [Install Observability](../cli/installation/observability.mdx).
 
 ## What's Next?
 
 Explore the following resources to go deeper:
 
 - [Recipes](https://github.com/ai-dynamo/dynamo/tree/main/recipes) -- Compose disaggregated serving, routing, and offloading
-- [KV Cache-Aware Routing](../components/router/router-guide.md) -- Configure smart request routing
-- [KV Cache Offloading](../components/kvbm/kvbm-guide.md) -- Set up multi-tier memory management
-- [Planner](../components/planner/planner-guide.md) -- Configure SLA-based autoscaling
-- [Kubernetes Deployment](../kubernetes/quickstart.mdx) -- Deploy at scale with Grove
-- [Gateway API Routing](../kubernetes/inference-gateway.mdx) -- Route Dynamo requests through a Kubernetes Gateway and EPP
-- [Overall Architecture](../design-docs/architecture.md) -- Full technical design
-- [Support Matrix](../reference/compatibility.mdx) -- Check hardware and engine compatibility
+- [KV Cache-Aware Routing](../developer-guide/knowledge-base/modular-components/router/router-guide.md) -- Configure smart request routing
+- [KV Cache Offloading](../developer-guide/knowledge-base/modular-components/kvbm/kvbm-guide.md) -- Set up multi-tier memory management
+- [Planner](../developer-guide/knowledge-base/modular-components/planner/planner-guide.md) -- Configure SLA-based autoscaling
+- [Kubernetes Deployment](../kubernetes/getting-started/quickstart.mdx) -- Deploy at scale with Grove
+- [Gateway API Routing](../kubernetes/kv-aware-routing/gateway-api.mdx) -- Route Dynamo requests through a Kubernetes Gateway and EPP
+- [Overall Architecture](../developer-guide/knowledge-base/overview.md) -- Full technical design
+- [Support Matrix](../reference/general/compatibility.mdx) -- Check hardware and engine compatibility
 
-**Further reading:** [Dynamo Digest](../digest/index.mdx).
+**Further reading:** [Dynamo Digest](../blog/latest.mdx).

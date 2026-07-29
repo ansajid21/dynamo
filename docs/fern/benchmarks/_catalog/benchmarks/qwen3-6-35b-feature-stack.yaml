@@ -3,7 +3,7 @@
 #
 id: qwen3-6-35b-feature-stack
 title: Qwen3.6 Frontend and Cache Benchmark
-page: benchmarks/qwen3-6-35b-feature-stack.mdx
+page: recipes/feature-benchmarks/qwen3-6-35b-feature-stack.mdx
 claim: Dynamo FD + 8 GiB embedding cache beats vanilla vllm serve by +29.8% RPS / -66.4% TTFT avg (H100) and +31.5% RPS
   / -43.3% TTFT avg (GB200) on a single GPU
 subtype: feature-stack

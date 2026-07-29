@@ -150,11 +150,10 @@ jobs:
           rm -rf docs-checkout/fern/pages-dev
           mkdir -p docs-checkout/fern/pages-dev
           rsync -a \
-            --exclude='digest' \
             --exclude='index.yml' \
             --exclude='fern.config.json' \
             --exclude='docs.yml' \
-            --exclude='components' \
+            --exclude='/components' \
             --exclude='main.css' \
             --exclude='products' \
             --exclude='welcome.mdx' \
@@ -186,7 +185,7 @@ jobs:
             source-checkout/docs/fern/components/ docs-checkout/fern/pages-dev/components/
 
           # Backend deploy manifests are embedded into templates/{vllm,sglang,
-          # trtllm}.mdx and DGDR manifests into templates/dgdr.mdx via build-time
+          # trtllm}.mdx and DGDR manifests into recipes/kubernetes-templates/dgdr.mdx via build-time
           # <Code src="../../../examples/..."> file reads. Those resolve to the
           # repo-root examples/ tree in the source layout, which does not exist
           # on docs-website — sync just the referenced subtrees to the branch
@@ -210,8 +209,8 @@ jobs:
           cp source-checkout/docs/fern/fern.config.json docs-checkout/fern/fern.config.json
 
           # Sync README.md (developer guide, referenced from dev.yml)
-          if [ -f source-checkout/docs/fern/README.md ]; then
-            cp source-checkout/docs/fern/README.md docs-checkout/fern/README.md
+          if [ -f source-checkout/docs/fern/developer-guide/contributing/documentation/building-and-publishing.md ]; then
+            cp source-checkout/docs/fern/developer-guide/contributing/documentation/building-and-publishing.md docs-checkout/fern/README.md
           fi
 
           # Sync .gitignore if it exists
@@ -234,7 +233,8 @@ jobs:
           # Remove the legacy product configs and sync the standalone Home page
           # used by docs.yml and the Home tab.
           rm -rf docs-checkout/fern/products
-          cp source-checkout/docs/fern/welcome.mdx docs-checkout/fern/welcome.mdx
+          cp source-checkout/docs/fern/home/welcome.mdx docs-checkout/fern/welcome.mdx
+          sed -i 's|\.\./assets/|./assets/|g' docs-checkout/fern/welcome.mdx
 
           # Sync root-level assets/ (docs.yml logos/fonts and welcome.mdx reference
           # ./assets/ relative to the Fern root, not pages-dev). Merge-copy without
@@ -247,9 +247,9 @@ jobs:
           # Sync digest/ directory
           if [ -d source-checkout/docs/fern/digest ]; then
             echo "Syncing digest/ to docs-website branch..."
-            # Keep fern/blogs for older versioned docs that still reference ../blogs.
-            rm -rf docs-checkout/fern/digest
-            cp -r source-checkout/docs/fern/digest docs-checkout/fern/digest
+            # Keep legacy root Digest pages for older versions that still reference ../digest/.
+            mkdir -p docs-checkout/fern/digest
+            cp -r source-checkout/docs/fern/digest/. docs-checkout/fern/digest/
             # The digest posts were renamed .md -> .mdx at the source; retarget the
             # release-managed versions/v*.yml snapshots that still point at the old
             # extension. Harmless no-op once every snapshot references .mdx.
@@ -269,7 +269,8 @@ jobs:
           # Sync Fern's native-localization mirror. Guarded on the source tree so
           # this no-ops cleanly until docs/fern/translations/ is present.
           # fern/translations/<lang>/pages-dev/<path> pairs with the base page at
-          # fern/pages-dev/<path>, per locale. Replace only the pages-dev mirrors --
+          # fern/pages-dev/<path>, per locale. Source mirrors live under pages/.
+          # Replace only the pages-dev mirrors --
           # versioned snapshots (pages-v*) are committed by the release job and must
           # survive dev syncs (see #11195).
           if [ -d source-checkout/docs/fern/translations ]; then
@@ -277,17 +278,17 @@ jobs:
             for d in docs-checkout/fern/translations/*/pages-dev; do
               [ -d "$d" ] || continue
               lang=$(basename "$(dirname "$d")")
-              if [ ! -d "source-checkout/docs/fern/translations/$lang/pages-dev" ]; then
+              if [ ! -d "source-checkout/docs/fern/translations/$lang/pages" ]; then
                 echo "Removing dev mirror for retired locale $lang..."
                 rm -rf "$d"
               fi
             done
             for lang_dir in source-checkout/docs/fern/translations/*/; do
               lang=$(basename "$lang_dir")
-              if [ -d "$lang_dir/pages-dev" ]; then
+              if [ -d "$lang_dir/pages" ]; then
                 rm -rf "docs-checkout/fern/translations/$lang/pages-dev"
                 mkdir -p "docs-checkout/fern/translations/$lang"
-                cp -r "$lang_dir/pages-dev" "docs-checkout/fern/translations/$lang/pages-dev"
+                cp -r "$lang_dir/pages" "docs-checkout/fern/translations/$lang/pages-dev"
               fi
             done
           fi
@@ -301,7 +302,7 @@ jobs:
           # Order matters: transform digest/ first so the second sub() won't re-match it
           # (they'll start with ../ which doesn't match ^[a-zA-Z]).
           yq -i '(.. | select(has("path")).path) |= sub("^digest/", "../digest/")' docs-checkout/fern/versions/dev.yml
-          yq -i '(.. | select(has("path")).path) |= sub("^\./welcome\.mdx$", "../welcome.mdx")' docs-checkout/fern/versions/dev.yml
+          yq -i '(.. | select(has("path")).path) |= sub("^home/welcome\.mdx$", "../welcome.mdx")' docs-checkout/fern/versions/dev.yml
           yq -i '(.. | select(has("path")).path) |= sub("^([a-zA-Z])", "../pages-dev/${1}")' docs-checkout/fern/versions/dev.yml
 
       - name: Propagate shared Reference nav to released versions
@@ -588,11 +589,10 @@ jobs:
           rm -rf "docs-checkout/fern/pages-$TAG"
           mkdir -p "docs-checkout/fern/pages-$TAG"
           rsync -a \
-            --exclude='digest' \
             --exclude='index.yml' \
             --exclude='fern.config.json' \
             --exclude='docs.yml' \
-            --exclude='components' \
+            --exclude='/components' \
             --exclude='main.css' \
             --exclude='products' \
             --exclude='welcome.mdx' \
@@ -693,7 +693,7 @@ jobs:
         # the marker is absent (older snapshots). Runs before callout conversion.
         run: |
           python3 source-checkout/.github/scripts/freeze_install_selector.py \
-            "docs-checkout/fern/pages-${{ steps.version.outputs.tag }}/getting-started/quickstart.mdx" \
+            "docs-checkout/fern/pages-${{ steps.version.outputs.tag }}/cli/getting-started/quickstart.mdx" \
             "${{ steps.version.outputs.version }}"
 
       - name: Update GitHub links to version tag
@@ -773,7 +773,7 @@ jobs:
           # below does not re-match.
           cp source-checkout/docs/fern/index.yml "$VERSION_FILE"
           yq -i '(.. | select(has("path")).path) |= sub("^digest/", "../digest/")' "$VERSION_FILE"
-          yq -i '(.. | select(has("path")).path) |= sub("^\./welcome\.mdx$", "../welcome.mdx")' "$VERSION_FILE"
+          yq -i '(.. | select(has("path")).path) |= sub("^home/welcome\.mdx$", "../welcome.mdx")' "$VERSION_FILE"
           yq -i '(.. | select(has("path")).path) |= sub("^([a-zA-Z])", "../pages-'"$TAG"'/${1}")' "$VERSION_FILE"
 
           # Revert the Reference tab's General variant to the shared source:

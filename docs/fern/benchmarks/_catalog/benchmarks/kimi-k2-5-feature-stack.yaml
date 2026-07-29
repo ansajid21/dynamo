@@ -3,7 +3,7 @@
 #
 id: kimi-k2-5-feature-stack
 title: Kimi-K2.5 Feature-Stack Benchmark
-page: benchmarks/kimi-k2-5-feature-stack.mdx
+page: recipes/feature-benchmarks/agentic-coding-throughput-stack-kimi-k2-5.mdx
 claim: Composing disaggregation + Eagle3 + KV routing + KV offload yields ~130 tok/s/user and ~5,400 tok/s/GPU, ~3x the
   per-GPU throughput of agg round-robin
 subtype: feature-stack

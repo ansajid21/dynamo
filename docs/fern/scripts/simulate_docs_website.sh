@@ -59,8 +59,8 @@ REF_SEL='.navigation[] | select(.tab == "reference") | .variants[] | select(.tit
 echo "=== SYNC JOB (replayed) ==="
 rm -rf "$WT/fern/pages-dev"; mkdir -p "$WT/fern/pages-dev"
 rsync -a \
-  --exclude='digest' --exclude='index.yml' --exclude='fern.config.json' \
-  --exclude='docs.yml' --exclude='components' --exclude='main.css' \
+  --exclude='index.yml' --exclude='fern.config.json' \
+  --exclude='docs.yml' --exclude='/components' --exclude='main.css' \
   --exclude='products' --exclude='welcome.mdx' --exclude='convert_callouts.py' \
   --exclude='.gitignore' --exclude='dev.sh' --exclude='watch.sh' \
   "$SRC/" "$WT/fern/pages-dev/"
@@ -71,21 +71,22 @@ rsync -a --include='*/' --include='backends/*/deploy/**' --exclude='*' --prune-e
 
 cp "$SRC/index.yml" "$WT/fern/versions/dev.yml"
 cp "$SRC/fern.config.json" "$WT/fern/fern.config.json"
-[ -f "$SRC/README.md" ] && cp "$SRC/README.md" "$WT/fern/README.md" || true
+[ -f "$SRC/developer-guide/contributing/documentation/building-and-publishing.md" ] && cp "$SRC/developer-guide/contributing/documentation/building-and-publishing.md" "$WT/fern/README.md" || true
 [ -f "$SRC/convert_callouts.py" ] && cp "$SRC/convert_callouts.py" "$WT/fern/convert_callouts.py" || true
 rm -rf "$WT/fern/components"; cp -r "$SRC/components" "$WT/fern/components"
 rm -rf "$WT/fern/products"
-cp "$SRC/welcome.mdx" "$WT/fern/welcome.mdx"
+cp "$SRC/home/welcome.mdx" "$WT/fern/welcome.mdx"
+perl -pi -e 's|\.\./assets/|./assets/|g' "$WT/fern/welcome.mdx"
 [ -d "$SRC/assets" ] && cp -r "$SRC/assets/." "$WT/fern/assets/" || true
 if [ -d "$SRC/digest" ]; then
-  rm -rf "$WT/fern/digest"; cp -r "$SRC/digest" "$WT/fern/digest"
+  mkdir -p "$WT/fern/digest"; cp -r "$SRC/digest/." "$WT/fern/digest/"
   perl -pi -e 's|(path: \.\./digest/.*)\.md$|$1.mdx|' "$WT"/fern/versions/v*.yml
 fi
 [ -f "$SRC/main.css" ] && cp "$SRC/main.css" "$WT/fern/main.css" || true
 [ -f "$SRC/custom.js" ] && cp "$SRC/custom.js" "$WT/fern/custom.js" || true
 
 yq -i '(.. | select(has("path")).path) |= sub("^digest/", "../digest/")' "$WT/fern/versions/dev.yml"
-yq -i '(.. | select(has("path")).path) |= sub("^\./welcome\.mdx$", "../welcome.mdx")' "$WT/fern/versions/dev.yml"
+yq -i '(.. | select(has("path")).path) |= sub("^home/welcome\.mdx$", "../welcome.mdx")' "$WT/fern/versions/dev.yml"
 yq -i '(.. | select(has("path")).path) |= sub("^([a-zA-Z])", "../pages-dev/${1}")' "$WT/fern/versions/dev.yml"
 
 propagate_shared_reference() {
@@ -145,14 +146,14 @@ yq -i ".versions[0].display-name = \"Latest ($TAG)\"" fern/docs.yml
 
 echo "=== ASSERTIONS ==="
 shared=$(grep -c "path: \.\./pages-dev/reference/" "$VERSION_FILE" || true)
-frozen=$(grep -c "path: \.\./pages-$TAG/reference/runtime-config-reference.mdx" "$VERSION_FILE" || true)
+frozen=$(grep -c "path: \.\./pages-$TAG/reference/components/runtime-configuration.mdx" "$VERSION_FILE" || true)
 [ "$shared" -ge 10 ] && s1=ok || s1=FAIL
 assert "2. $TAG.yml: General variant shared ($shared pages-dev refs)" "$s1"
 [ "$frozen" -eq 1 ] && s2=ok || s2=FAIL
-assert "2. $TAG.yml: Components variant frozen (runtime-config)" "$s2"
+assert "2. $TAG.yml: Components variant frozen (runtime configuration)" "$s2"
 
-[ ! -e "fern/pages-$TAG/reference/compatibility.mdx" ] && \
-  [ -e "fern/pages-$TAG/reference/runtime-config-reference.mdx" ] && \
+[ ! -e "fern/pages-$TAG/reference/general/compatibility.mdx" ] && \
+  [ -e "fern/pages-$TAG/reference/components/runtime-configuration.mdx" ] && \
   [ -d "fern/pages-$TAG/reference/observability" ] && s3=ok || s3=FAIL
 assert "3. snapshot drops shared files, keeps versioned reference/" "$s3"
 

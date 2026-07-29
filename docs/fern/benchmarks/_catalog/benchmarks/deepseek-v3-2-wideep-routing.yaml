@@ -3,7 +3,7 @@
 #
 id: deepseek-v3-2-wideep-routing
 title: DeepSeek V3.2 WideEP Routing A/B
-page: benchmarks/deepseek-v3-2-wideep-routing.mdx
+page: recipes/feature-benchmarks/deepseek-v3-2-wideep-routing.mdx
 claim: Disaggregated KV-aware routing + WideEP (2P+2D DEP8) improves latency/goodput vs aggregated round-robin (4x DEP8)
   on a 44%-KV-reuse long-context coding trace
 subtype: ab-test

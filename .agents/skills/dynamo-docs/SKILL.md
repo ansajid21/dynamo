@@ -23,7 +23,7 @@ site, in line with the project's authoring guides.
 
 Two authoring guides govern this work; read whichever applies before writing:
 
-- [`docs/fern/documentation-style-guide.md`](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/documentation-style-guide.md) — the standard for **every** page: frontmatter, headings, prose, terminology, links, callouts. The must-fix subset is distilled in [Style Guide Is the Standard](#style-guide-is-the-standard) and [Content Rules](#content-rules) below.
+- [`docs/fern/developer-guide/contributing/documentation/documentation-style-guide.md`](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/developer-guide/contributing/documentation/documentation-style-guide.md) — the standard for **every** page: frontmatter, headings, prose, terminology, links, callouts. The must-fix subset is distilled in [Style Guide Is the Standard](#style-guide-is-the-standard) and [Content Rules](#content-rules) below.
 - [`docs/fern/recipes/_catalog/README.md`](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/recipes/_catalog/README.md) — the standard for **recipe and feature-benchmark pages** (the catalog contract, the `.mdx` page blueprint, and the pure-CSS target picker). See [Add a Recipe or Feature Benchmark Page](#add-a-recipe-or-feature-benchmark-page).
 
 ## Branch Rule
@@ -34,7 +34,7 @@ The `docs-website` branch is CI-managed and must **never** be edited by hand.
 ## Style Guide Is the Standard
 
 Every page under `docs/` (and the READMEs under `examples/` and `recipes/`) follows the
-[Documentation Style Guide](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/documentation-style-guide.md)
+[Documentation Style Guide](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/developer-guide/contributing/documentation/documentation-style-guide.md)
 (`docs/documentation-style-guide.md`). Read it before writing content. The docs bot enforces a
 **must-fix** subset on every PR — get these right or the checks fail:
 

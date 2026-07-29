@@ -3,7 +3,7 @@
 #
 id: llama-3-70b-topology
 title: Llama-3.3-70B Topology Benchmark
-page: benchmarks/llama-3-70b-topology.mdx
+page: recipes/feature-benchmarks/llama-3-3-70b-topology.mdx
 claim: Agg (4 GPU), single-node disagg (8 GPU), and multi-node disagg (16 GPU) vLLM topologies compared at 16 concurrency/GPU,
   normalized by TPS/GPU
 subtype: topology

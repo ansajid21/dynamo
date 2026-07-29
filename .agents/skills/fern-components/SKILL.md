@@ -34,7 +34,7 @@ page formats, and the boundary is a hard must-fix:
 
 | Page type | How to write rich content |
 |---|---|
-| **`.mdx`** (e.g. `getting-started/introduction.mdx`, recipe pages) | Use Fern components **directly** — `<CardGroup>`, `<Steps>`, `<Accordion>`, `<Tabs>`, `<Note>`, etc. |
+| **`.mdx`** (e.g. `kubernetes/getting-started/introduction.mdx`, recipe pages) | Use Fern components **directly** — `<CardGroup>`, `<Steps>`, `<Accordion>`, `<Tabs>`, `<Note>`, etc. |
 | **`.md`** (most docs pages) | **Do not hand-write `<Note>`/`<Tip>`/etc.** Write callouts GitHub-style (`> [!NOTE]`); `fern/convert_callouts.py` converts them at build. Other components (Cards, Steps, Tabs…) are **not** available — restructure with plain Markdown, or convert the page to `.mdx` on purpose. |
 
 Callout conversion map (GitHub → Fern), for `.md` pages:
