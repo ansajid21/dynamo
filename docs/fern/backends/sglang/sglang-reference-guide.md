@@ -46,7 +46,7 @@ These arguments are added by Dynamo on top of SGLang's native arguments. For the
 | `--video-generation-worker` | `DYN_SGL_VIDEO_GENERATION_WORKER` | `false` | Run as [video generation](../../features/diffusion/text-to-video/README.md#sglang) worker |
 | `--disagg-config` | `DYN_SGL_DISAGG_CONFIG` | `None` | Path to YAML disaggregation config file |
 | `--disagg-config-key` | `DYN_SGL_DISAGG_CONFIG_KEY` | `None` | Key to select from disaggregation config (e.g., `prefill`, `decode`) |
-| `--engine-route` | `DYN_SGLANG_ENGINE_ROUTES` | None | Expose a startup-allowlisted SGLang Engine or tokenizer-manager method under `/engine/<path>`; repeat the flag or separate environment descriptors with whitespace |
+| `--engine-route` | `DYN_SGLANG_ENGINE_ROUTES` | `None` | Expose a startup-allowlisted SGLang Engine or tokenizer-manager method under `/engine/<path>`; repeat the flag or separate environment descriptors with whitespace |
 
 > [!NOTE]
 > `--disagg-config` and `--disagg-config-key` must be provided together. The selected section is written to a temp YAML file and passed to SGLang's `--config` flag.
