@@ -363,7 +363,56 @@ def test_normalize_drops_nulls_and_empties_recursively():
 
 REPO_ROOT = _Path(__file__).resolve().parents[3]
 
-CONFORMANCE_NAMES = ["agg", "disagg", "disagg_router", "disagg_planner"]
+CONFORMANCE_NAMES = ("agg", "disagg", "disagg_router", "disagg_planner")
+
+
+def test_examples_default_to_v1beta1():
+    """Paired DGD examples default to v1beta1 and retain v1alpha1 as legacy."""
+    legacy_only = {
+        "examples/backends/vllm/deploy/v1alpha1/xpu/agg_router_kv_approx_xpu_dra.yaml",
+        "examples/backends/vllm/deploy/v1alpha1/xpu/agg_router_xpu_dra.yaml",
+        "examples/backends/vllm/deploy/v1alpha1/xpu/agg_tracing_xpu_dra.yaml",
+        "examples/backends/vllm/deploy/v1alpha1/xpu/disagg_planner_xpu_dra.yaml",
+        "examples/backends/vllm/deploy/v1alpha1/xpu/disagg_router_xpu_dra.yaml",
+        "examples/backends/vllm/deploy/v1alpha1/xpu/disagg_tracing_xpu_dra.yaml",
+        "examples/global_planner/v1alpha1/global-planner-vllm-test-xpu-dra.yaml",
+    }
+    legacy_paths = sorted(REPO_ROOT.glob("examples/**/v1alpha1/**/*.yaml"))
+    legacy_paths.extend(
+        sorted(REPO_ROOT.glob("deploy/operator/samples/v1alpha1/**/*.yaml"))
+    )
+    checked_pairs = 0
+
+    for alpha_path in legacy_paths:
+        relative_parts = list(alpha_path.relative_to(REPO_ROOT).parts)
+        relative_parts.remove("v1alpha1")
+        beta_path = REPO_ROOT.joinpath(*relative_parts)
+
+        alpha_versions = {
+            doc["apiVersion"]
+            for doc in c.load_docs(alpha_path.read_text())
+            if doc.get("kind") == "DynamoGraphDeployment"
+        }
+        if not alpha_versions:
+            continue
+        assert alpha_versions == {"nvidia.com/v1alpha1"}, alpha_path
+
+        if not beta_path.exists():
+            relative_path = alpha_path.relative_to(REPO_ROOT).as_posix()
+            assert relative_path in legacy_only, (
+                f"{relative_path} is legacy-only but is not in the explicit allowlist"
+            )
+            continue
+
+        beta_versions = {
+            doc["apiVersion"]
+            for doc in c.load_docs(beta_path.read_text())
+            if doc.get("kind") == "DynamoGraphDeployment"
+        }
+        assert beta_versions == {"nvidia.com/v1beta1"}, beta_path
+        checked_pairs += 1
+
+    assert checked_pairs > 0
 
 
 def _cluster_available() -> bool:
@@ -393,10 +442,8 @@ requires_cluster = pytest.mark.skipif(
 @pytest.mark.parametrize("name", CONFORMANCE_NAMES)
 def test_conformance_vllm_example_pair(name):
     """Conformance vllm example pair."""
-    alpha_path = REPO_ROOT / f"examples/backends/vllm/deploy/{name}.yaml"
-    beta_path = REPO_ROOT / f"examples/backends/vllm/deploy/v1beta1/{name}.yaml"
-    if not alpha_path.exists() or not beta_path.exists():
-        pytest.skip(f"missing example pair for {name}")
+    alpha_path = REPO_ROOT / f"examples/backends/vllm/deploy/v1alpha1/{name}.yaml"
+    beta_path = REPO_ROOT / f"examples/backends/vllm/deploy/{name}.yaml"
 
     converted = c.convert_docs(
         c.load_docs(alpha_path.read_text()), target="nvidia.com/v1beta1"

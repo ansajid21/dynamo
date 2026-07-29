@@ -15,7 +15,11 @@ enforces shared scaling policy across multiple DGDs.
 | `global-planner-gpu-budget.yaml` | Multi-model, GPU budget | vLLM | 2 independent model DGDs + 1 control DGD with `--max-total-gpus` |
 | `global-planner-vllm-test.yaml` | Single-endpoint, multi-pool | vLLM | 1 Frontend + GlobalRouter + GlobalPlanner, 2 prefill pools (TP1, TP2) + 1 decode pool |
 | `global-planner-mocker-test.yaml` | Single-endpoint, multi-pool | Mocker | Same as above with Mocker workers; GlobalPlanner in `--no-operation` mode |
-| `global-planner-vllm-test-xpu-dra.yaml` | Single-endpoint, multi-pool | vLLM (Intel XPU) | XPU/DRA variant with 2 TP1 prefill pools and 1 TP1 decode pool |
+
+> [!WARNING]
+> The Intel XPU template at
+> [`v1alpha1/global-planner-vllm-test-xpu-dra.yaml`](v1alpha1/global-planner-vllm-test-xpu-dra.yaml)
+> uses the deprecated API and is retained only for migration testing.
 
 ## Deployment Patterns
 
@@ -114,7 +118,8 @@ export STORAGE_CLASS_NAME=<rwx-storage-class>
 kubectl create secret generic hf-token-secret \
   --from-literal=HF_TOKEN=<your-token> -n ${K8S_NAMESPACE}
 
-envsubst < global-planner-vllm-test-xpu-dra.yaml | kubectl apply -n ${K8S_NAMESPACE} -f -
+envsubst < v1alpha1/global-planner-vllm-test-xpu-dra.yaml | \
+  kubectl apply -n ${K8S_NAMESPACE} -f -
 ```
 
 **Prerequisites for XPU deployment:**
