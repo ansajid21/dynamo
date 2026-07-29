@@ -17,11 +17,11 @@ from dynamo.vllm.multimodal_utils.custom_encoder.backend.base import (
 
 
 def create_custom_encoder_adapter(
-    backend: VisionEncoderBackend,
+    backend: VisionEncoderBackend[Any, Any, Any],
     model_config: Any,
     engine_args: Any,
     vllm_config: Any | None = None,
-) -> CustomEncoderAdapter:
+) -> CustomEncoderAdapter[Any]:
     """Create the adapter selected by the resolved downstream decoder.
 
     The first slice supports text-only decoders. ``vllm_config`` is accepted at
