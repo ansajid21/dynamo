@@ -423,6 +423,8 @@ redirects:
     destination: "/dynamo/"
   - source: "/dynamo/dev/index.html"
     destination: "/dynamo/dev/"
+  - source: "/dynamo/dev/welcome"
+    destination: "/dynamo/dev/"
   - source: "/dynamo/latest/index.html"
     destination: "/dynamo/"
   - source: "/dynamo/dev/backends/custom-backend/writing-unified-backends/python"

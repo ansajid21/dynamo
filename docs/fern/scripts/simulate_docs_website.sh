@@ -61,7 +61,7 @@ rm -rf "$WT/fern/pages-dev"; mkdir -p "$WT/fern/pages-dev"
 rsync -a \
   --exclude='index.yml' --exclude='fern.config.json' \
   --exclude='docs.yml' --exclude='/components' --exclude='main.css' \
-  --exclude='products' --exclude='welcome.mdx' --exclude='convert_callouts.py' \
+  --exclude='products' --exclude='/home/index.mdx' --exclude='convert_callouts.py' \
   --exclude='.gitignore' --exclude='dev.sh' --exclude='watch.sh' \
   "$SRC/" "$WT/fern/pages-dev/"
 rsync -a --include='*/' --include='*.md' --include='*.mdx' --exclude='*' --prune-empty-dirs \
@@ -75,8 +75,8 @@ cp "$SRC/fern.config.json" "$WT/fern/fern.config.json"
 [ -f "$SRC/convert_callouts.py" ] && cp "$SRC/convert_callouts.py" "$WT/fern/convert_callouts.py" || true
 rm -rf "$WT/fern/components"; cp -r "$SRC/components" "$WT/fern/components"
 rm -rf "$WT/fern/products"
-cp "$SRC/home/welcome.mdx" "$WT/fern/welcome.mdx"
-perl -pi -e 's|\.\./assets/|./assets/|g' "$WT/fern/welcome.mdx"
+cp "$SRC/home/index.mdx" "$WT/fern/index.mdx"
+perl -pi -e 's|\.\./assets/|./assets/|g' "$WT/fern/index.mdx"
 [ -d "$SRC/assets" ] && cp -r "$SRC/assets/." "$WT/fern/assets/" || true
 if [ -d "$SRC/digest" ]; then
   mkdir -p "$WT/fern/digest"; cp -r "$SRC/digest/." "$WT/fern/digest/"
@@ -86,7 +86,7 @@ fi
 [ -f "$SRC/custom.js" ] && cp "$SRC/custom.js" "$WT/fern/custom.js" || true
 
 yq -i '(.. | select(has("path")).path) |= sub("^digest/", "../digest/")' "$WT/fern/versions/dev.yml"
-yq -i '(.. | select(has("path")).path) |= sub("^home/welcome\.mdx$", "../welcome.mdx")' "$WT/fern/versions/dev.yml"
+yq -i '(.. | select(has("path")).path) |= sub("^home/index\.mdx$", "../index.mdx")' "$WT/fern/versions/dev.yml"
 yq -i '(.. | select(has("path")).path) |= sub("^([a-zA-Z])", "../pages-dev/${1}")' "$WT/fern/versions/dev.yml"
 
 propagate_shared_reference() {
