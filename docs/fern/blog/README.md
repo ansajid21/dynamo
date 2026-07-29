@@ -9,10 +9,10 @@ Follow these steps to publish a post in the Dynamo Blog tab.
 
 ## Step 1: Write the Post
 
-Create an MDX file under `docs/digest/` using a topic folder when the post has supporting images:
+Create an MDX file under `docs/fern/blog/<year>/`; put supporting files under `docs/fern/blog/_assets/<topic>/`:
 
 ```text
-docs/digest/my-post/my-post.mdx
+docs/fern/blog/2026/my-post.mdx
 ```
 
 Use kebab-case for the filename. Add the standard SPDX header and metadata:
@@ -59,7 +59,7 @@ Open `docs/fern/index.yml`, find the `blog` tab, and add the post at the correct
 ```yaml
 contents:
   - page: Your Blog Post Title
-    path: digest/my-post/my-post.mdx
+    path: blog/2026/my-post.mdx
     slug: my-post
 ```
 

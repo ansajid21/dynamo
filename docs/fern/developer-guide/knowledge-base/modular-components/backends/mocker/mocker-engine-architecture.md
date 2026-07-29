@@ -134,4 +134,4 @@ The following features are not yet supported by the mocker:
 | [Simulate a Kubernetes Deployment](../../../../../kubernetes/operations/dynosim/mocker-live-simulation.mdx) | Deploy and run Mocker on Kubernetes |
 | [Simulate a Local Deployment](../../../../../cli/operations/dynosim/mocker-live-simulation.mdx) | Run Mocker from the command line |
 | [Mocker CLI Reference](../../../../../reference/components/mocker-cli-reference.mdx) | Command-line flags for `python -m dynamo.mocker` |
-| [Run a DynoSim Simulation](../../../../../shared/dynosim/dynosim-replay.mdx) | Run one workload through a simulated configuration with `python -m dynamo.replay` |
+| [Run a DynoSim Simulation](../../../../../cli/operations/dynosim/dynosim-replay.mdx) | Run one workload through a simulated configuration with `python -m dynamo.replay` |

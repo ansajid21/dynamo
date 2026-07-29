@@ -7,8 +7,8 @@ subtitle: Flags, engine-args JSON fields, constraints, and report schema for pyt
 
 `python -m dynamo.replay` runs one workload through one simulated Dynamo configuration and emits an
 AIPerf-style report. This page is the flag and schema reference. For the workflow — input formats,
-run modes, and when to use DynoSim versus AIPerf — see [DynoSim Runs](../../shared/dynosim/dynosim-replay.mdx); for
-searching many configurations, see [DynoSim Sweeps](../../shared/dynosim/dynosim-sweeps.mdx).
+run modes, and when to use DynoSim versus AIPerf — see [DynoSim Runs](../../cli/operations/dynosim/dynosim-replay.mdx); for
+searching many configurations, see [DynoSim Sweeps](../../cli/operations/dynosim/dynosim-sweeps.mdx).
 
 The command reuses the mocker engine, so engine behavior is configured through JSON passed to
 `--extra-engine-args` (or the staged `--prefill-engine-args` / `--decode-engine-args`) rather than
@@ -352,10 +352,10 @@ The report — and the equivalent Python APIs `dynamo.replay.run_trace_replay(..
 ## Related pages
 
 <CardGroup cols={2}>
-  <Card title="DynoSim Runs" icon="play" href="../../shared/dynosim/dynosim-replay.mdx">
+  <Card title="DynoSim Runs" icon="play" href="../../cli/operations/dynosim/dynosim-replay.mdx">
     Input formats, run modes, and when to use DynoSim versus AIPerf.
   </Card>
-  <Card title="DynoSim Sweeps" icon="magnifying-glass-chart" href="../../shared/dynosim/dynosim-sweeps.mdx">
+  <Card title="DynoSim Sweeps" icon="magnifying-glass-chart" href="../../cli/operations/dynosim/dynosim-sweeps.mdx">
     Search many simulated configurations against SLA and GPU-budget constraints.
   </Card>
   <Card title="Mocker CLI Reference" icon="terminal" href="mocker-cli-reference.mdx">

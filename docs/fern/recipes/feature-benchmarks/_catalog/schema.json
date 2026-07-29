@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/ai-dynamo/dynamo/docs/benchmarks/_catalog/schema.json",
+  "$id": "https://github.com/ai-dynamo/dynamo/docs/recipes/feature-benchmarks/_catalog/schema.json",
   "title": "Dynamo feature-benchmark catalog entry",
-  "description": "JSON Schema (draft 2020-12) for ONE benchmark object, i.e. the contents of docs/benchmarks/_catalog/benchmarks/<id>.yaml. Each entry is a reproducible performance claim with deployable control and treatment configs.",
+  "description": "JSON Schema (draft 2020-12) for ONE benchmark object, i.e. the contents of docs/recipes/feature-benchmarks/_catalog/benchmarks/<id>.yaml. Each entry is a reproducible performance claim with deployable control and treatment configs.",
   "type": "object",
   "required": [
     "id",

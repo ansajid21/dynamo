@@ -213,19 +213,19 @@ navigation:
             slug: dynosim
             contents:
               - page: Overview
-                path: shared/dynosim/overview.md
+                path: kubernetes/operations/dynosim/overview.md
               - page: Simulation Model
                 slug: simulation-model
-                path: shared/dynosim/simulation-model.md
+                path: kubernetes/operations/dynosim/simulation-model.md
               - page: Mocker Live Simulation
                 slug: live-simulation-with-mocker
                 path: kubernetes/operations/dynosim/mocker-live-simulation.mdx
               - page: DynoSim Replay
                 slug: simulation-runs
-                path: shared/dynosim/dynosim-replay.mdx
+                path: kubernetes/operations/dynosim/dynosim-replay.mdx
               - page: DynoSim Sweeps
                 slug: simulation-sweeps
-                path: shared/dynosim/dynosim-sweeps.mdx
+                path: kubernetes/operations/dynosim/dynosim-sweeps.mdx
               - page: DynoSim Planner Replay
                 slug: planner-simulation-benchmarking
                 path: kubernetes/operations/dynosim/dynosim-planner-replay.mdx
@@ -287,18 +287,18 @@ navigation:
             slug: dynosim
             contents:
               - page: Overview
-                path: shared/dynosim/overview.md
+                path: cli/operations/dynosim/overview.md
               - page: Simulation Model
                 slug: simulation-model
-                path: shared/dynosim/simulation-model.md
+                path: cli/operations/dynosim/simulation-model.md
               - page: Mocker Live Simulation
                 path: cli/operations/dynosim/mocker-live-simulation.mdx
               - page: DynoSim Replay
                 slug: simulation-runs
-                path: shared/dynosim/dynosim-replay.mdx
+                path: cli/operations/dynosim/dynosim-replay.mdx
               - page: DynoSim Sweeps
                 slug: simulation-sweeps
-                path: shared/dynosim/dynosim-sweeps.mdx
+                path: cli/operations/dynosim/dynosim-sweeps.mdx
 
   - tab: use-cases
     layout:
@@ -569,6 +569,8 @@ navigation:
                     path: developer-guide/knowledge-base/concepts/communication-planes/event-plane.md
               - page: Observability Architecture
                 path: developer-guide/knowledge-base/concepts/observability-architecture.md
+              - page: Forward Pass Metrics RFC
+                path: developer-guide/knowledge-base/concepts/observability/forward-pass-metrics-rfc.md
               - section: Simulation
                 collapsed: true
                 contents:
@@ -767,6 +769,8 @@ navigation:
                     contents:
                       - page: Mocker Engine Architecture
                         path: developer-guide/knowledge-base/modular-components/backends/mocker/mocker-engine-architecture.md
+                      - page: Rust Backend
+                        path: developer-guide/knowledge-base/modular-components/backends/mocker/rust-backend.md
           - section: Kubernetes
             collapsed: true
             contents:
@@ -1039,6 +1043,8 @@ navigation:
             path: reference/observability/metric-labels.mdx
           - page: Operator Metrics
             path: reference/observability/operator-metrics.mdx
+          - page: Local Resource Monitor Guide
+            path: reference/observability/local-resource-monitor-guide.md
           - page: Local Resource Monitor (Local)
             path: reference/observability/local-resource-monitor-local.mdx
 

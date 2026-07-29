@@ -572,7 +572,7 @@ shared:
   owners:
   - docs
   - agents
-- glob: docs/fern/digest/agentic-inference/
+- glob: docs/fern/blog/_assets/agentic-inference/
   owners:
   - docs
   - agents

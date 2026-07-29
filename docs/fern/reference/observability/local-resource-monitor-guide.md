@@ -1,11 +1,11 @@
-<!--
-SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-SPDX-License-Identifier: Apache-2.0
--->
+---
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+title: Local Resource Monitor Guide
+---
 
-# Dynamo Local Resource Monitor
 
-[`dynamo_local_resource_monitor.py`](../../../dev/observability/dynamo_local_resource_monitor.py) is a Dynamo-specific resource monitor that tracks per-process resource usage (VRAM, GPU utilization, PCIe bandwidth, CPU, disk I/O, network I/O) for Dynamo inference processes — labeled by model name, process identity, and PID. It always exposes Prometheus metrics at `/metrics`; when the dashboard dependencies are installed, the same endpoint also serves a WebSocket dashboard at `/`.
+[`dynamo_local_resource_monitor.py`](https://github.com/ai-dynamo/dynamo/blob/main/dev/observability/dynamo_local_resource_monitor.py) is a Dynamo-specific resource monitor that tracks per-process resource usage (VRAM, GPU utilization, PCIe bandwidth, CPU, disk I/O, network I/O) for Dynamo inference processes — labeled by model name, process identity, and PID. It always exposes Prometheus metrics at `/metrics`; when the dashboard dependencies are installed, the same endpoint also serves a WebSocket dashboard at `/`.
 
 ## Why this and not the existing observability tools?
 

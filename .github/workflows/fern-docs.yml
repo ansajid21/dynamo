@@ -156,7 +156,7 @@ jobs:
             --exclude='/components' \
             --exclude='main.css' \
             --exclude='products' \
-            --exclude='welcome.mdx' \
+            --exclude='/home/index.mdx' \
             --exclude='convert_callouts.py' \
             --exclude='.gitignore' \
             --exclude='dev.sh' \
@@ -233,10 +233,10 @@ jobs:
           # Remove the legacy product configs and sync the standalone Home page
           # used by docs.yml and the Home tab.
           rm -rf docs-checkout/fern/products
-          cp source-checkout/docs/fern/home/welcome.mdx docs-checkout/fern/welcome.mdx
-          sed -i 's|\.\./assets/|./assets/|g' docs-checkout/fern/welcome.mdx
+          cp source-checkout/docs/fern/home/index.mdx docs-checkout/fern/index.mdx
+          sed -i 's|\.\./assets/|./assets/|g' docs-checkout/fern/index.mdx
 
-          # Sync root-level assets/ (docs.yml logos/fonts and welcome.mdx reference
+          # Sync root-level assets/ (docs.yml logos/fonts and index.mdx reference
           # ./assets/ relative to the Fern root, not pages-dev). Merge-copy without
           # deleting so assets still referenced by older versioned pages survive.
           if [ -d source-checkout/docs/fern/assets ]; then
@@ -244,12 +244,12 @@ jobs:
             cp -r source-checkout/docs/fern/assets/. docs-checkout/fern/assets/
           fi
 
-          # Sync digest/ directory
-          if [ -d source-checkout/docs/fern/digest ]; then
-            echo "Syncing digest/ to docs-website branch..."
+          # Sync legacy Digest asset mirror
+          if [ -d source-checkout/docs/fern/blog/_assets ]; then
+            echo "Syncing Blog assets to the legacy digest/ compatibility path..."
             # Keep legacy root Digest pages for older versions that still reference ../digest/.
             mkdir -p docs-checkout/fern/digest
-            cp -r source-checkout/docs/fern/digest/. docs-checkout/fern/digest/
+            cp -r source-checkout/docs/fern/blog/_assets/. docs-checkout/fern/digest/
             # The digest posts were renamed .md -> .mdx at the source; retarget the
             # release-managed versions/v*.yml snapshots that still point at the old
             # extension. Harmless no-op once every snapshot references .mdx.
@@ -302,7 +302,7 @@ jobs:
           # Order matters: transform digest/ first so the second sub() won't re-match it
           # (they'll start with ../ which doesn't match ^[a-zA-Z]).
           yq -i '(.. | select(has("path")).path) |= sub("^digest/", "../digest/")' docs-checkout/fern/versions/dev.yml
-          yq -i '(.. | select(has("path")).path) |= sub("^home/welcome\.mdx$", "../welcome.mdx")' docs-checkout/fern/versions/dev.yml
+          yq -i '(.. | select(has("path")).path) |= sub("^home/index\.mdx$", "../index.mdx")' docs-checkout/fern/versions/dev.yml
           yq -i '(.. | select(has("path")).path) |= sub("^([a-zA-Z])", "../pages-dev/${1}")' docs-checkout/fern/versions/dev.yml
 
       - name: Propagate shared Reference nav to released versions
@@ -595,7 +595,7 @@ jobs:
             --exclude='/components' \
             --exclude='main.css' \
             --exclude='products' \
-            --exclude='welcome.mdx' \
+            --exclude='/home/index.mdx' \
             --exclude='convert_callouts.py' \
             --exclude='.gitignore' \
             --exclude='dev.sh' \
@@ -768,12 +768,12 @@ jobs:
 
           # Navigation must come from the tag so it references exactly the pages
           # in the release snapshot (#11140). Mirror the dev-nav transform, but
-          # point content pages at this tag. Digest and welcome are shared
+          # point content pages at this tag. Digest and the Home index are shared
           # siblings on docs-website; rewrite them first so the content-page rule
           # below does not re-match.
           cp source-checkout/docs/fern/index.yml "$VERSION_FILE"
           yq -i '(.. | select(has("path")).path) |= sub("^digest/", "../digest/")' "$VERSION_FILE"
-          yq -i '(.. | select(has("path")).path) |= sub("^home/welcome\.mdx$", "../welcome.mdx")' "$VERSION_FILE"
+          yq -i '(.. | select(has("path")).path) |= sub("^home/index\.mdx$", "../index.mdx")' "$VERSION_FILE"
           yq -i '(.. | select(has("path")).path) |= sub("^([a-zA-Z])", "../pages-'"$TAG"'/${1}")' "$VERSION_FILE"
 
           # Revert the Reference tab's General variant to the shared source:

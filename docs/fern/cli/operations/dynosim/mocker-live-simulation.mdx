@@ -10,7 +10,7 @@ and worker behavior without loading a model or using GPUs. This is a **live simu
 frontend and workers, then send HTTP requests through the Dynamo runtime.
 
 For a faster **offline replay** that drives simulated engines directly without a frontend, worker
-registration, or runtime services, see [Run a DynoSim Simulation](../../../shared/dynosim/dynosim-replay.mdx).
+registration, or runtime services, see [Run a DynoSim Simulation](dynosim-replay.mdx).
 
 This tutorial uses file-based discovery so that the frontend and worker can run without etcd or
 NATS. For Kubernetes, see [Simulate a Kubernetes Deployment](../../../kubernetes/operations/dynosim/mocker-live-simulation.mdx). For every available flag,
@@ -118,7 +118,7 @@ python -m dynamo.mocker \
 ```
 
 Use the [Mocker CLI Reference](../../../reference/components/mocker-cli-reference.mdx) for scheduling,
-KV-cache, timing, AIC, and transport settings. Use [Run a DynoSim Simulation](../../../shared/dynosim/dynosim-replay.mdx) when you want
+KV-cache, timing, AIC, and transport settings. Use [Run a DynoSim Simulation](dynosim-replay.mdx) when you want
 to replay a complete trace without managing live frontend and worker processes.
 </Step>
 </Steps>

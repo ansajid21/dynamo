@@ -6,7 +6,7 @@
 # theme. Folds the record + theme-injection steps into one.
 #
 # Usage:
-#   ./record-hero.sh                    # -> ../assets/hero-demo-25.cast at 120x25
+#   ./record-hero.sh                    # -> ../../assets/hero-demo-25.cast at 120x25
 #   ./record-hero.sh out.cast 28        # custom output + row count
 #   ./record-hero.sh out.cast 25 120    # custom output, rows, cols
 #
@@ -14,7 +14,7 @@
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUT="${1:-${DIR}/../assets/hero-demo-25.cast}"
+OUT="${1:-${DIR}/../../assets/hero-demo-25.cast}"
 ROWS="${2:-25}"
 COLS="${3:-120}"
 

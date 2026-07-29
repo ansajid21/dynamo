@@ -40,7 +40,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "..", ".."))
 DOCS_DIR = os.path.join(REPO_ROOT, "docs", "fern")
 RECIPES_CAT = os.path.join(DOCS_DIR, "recipes", "_catalog")
-BENCH_CAT = os.path.join(DOCS_DIR, "benchmarks", "_catalog")
+BENCH_CAT = os.path.join(DOCS_DIR, "recipes", "feature-benchmarks", "_catalog")
 
 # --- Optional deps -------------------------------------------------------------
 try:

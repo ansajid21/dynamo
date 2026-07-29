@@ -78,8 +78,8 @@ rm -rf "$WT/fern/products"
 cp "$SRC/home/index.mdx" "$WT/fern/index.mdx"
 perl -pi -e 's|\.\./assets/|./assets/|g' "$WT/fern/index.mdx"
 [ -d "$SRC/assets" ] && cp -r "$SRC/assets/." "$WT/fern/assets/" || true
-if [ -d "$SRC/digest" ]; then
-  mkdir -p "$WT/fern/digest"; cp -r "$SRC/digest/." "$WT/fern/digest/"
+if [ -d "$SRC/blog/_assets" ]; then
+  mkdir -p "$WT/fern/digest"; cp -r "$SRC/blog/_assets/." "$WT/fern/digest/"
   perl -pi -e 's|(path: \.\./digest/.*)\.md$|$1.mdx|' "$WT"/fern/versions/v*.yml
 fi
 [ -f "$SRC/main.css" ] && cp "$SRC/main.css" "$WT/fern/main.css" || true

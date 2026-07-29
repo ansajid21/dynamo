@@ -12,7 +12,7 @@ configurations to validate on real hardware.
 
 The current Python API is `dynamo.profiler.utils.replay_optimize`. For the input models, field names,
 result object, and output columns, see the
-[DynoSim Sweep Reference](../../reference/components/dynosim-sweep-reference.mdx).
+[DynoSim Sweep Reference](../../../reference/components/dynosim-sweep-reference.mdx).
 
 ## Prerequisites
 
@@ -113,9 +113,9 @@ A sweep is a heuristic search over simulated states, not an exhaustive proof tha
 is optimal. Take the highest-ranked feasible candidates through these checks:
 
 1. Run the configuration again with [Run a DynoSim Simulation](dynosim-replay.mdx).
-2. Exercise the live frontend and router with [Simulate a Local Deployment](../../cli/operations/dynosim/mocker-live-simulation.mdx) or
-   [Simulate a Kubernetes Deployment](../../kubernetes/operations/dynosim/mocker-live-simulation.mdx).
+2. Exercise the live frontend and router with [Simulate a Local Deployment](../../../cli/operations/dynosim/mocker-live-simulation.mdx) or
+   [Simulate a Kubernetes Deployment](mocker-live-simulation.mdx).
 3. Deploy the candidate on the target hardware and benchmark it with AIPerf using either the
-   [Kubernetes workflow](../../kubernetes/operations/benchmarking-with-aiperf.mdx) or the [local CLI workflow](../../cli/operations/benchmarking-with-aiperf.mdx).
+   [Kubernetes workflow](../benchmarking-with-aiperf.mdx) or the [local CLI workflow](../../../cli/operations/benchmarking-with-aiperf.mdx).
 </Step>
 </Steps>

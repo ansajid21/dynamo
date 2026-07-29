@@ -12,7 +12,7 @@ reference. For the deployment workflow and local/Kubernetes launch recipes, see
 [Simulate a Local Deployment](../../cli/operations/dynosim/mocker-live-simulation.mdx); for the engine internals these flags
 configure, see [Mocker Engine Architecture](../../developer-guide/knowledge-base/modular-components/backends/mocker/mocker-engine-architecture.md).
 
-The same engine settings apply to [DynoSim Runs](../../shared/dynosim/dynosim-replay.mdx): `python -m dynamo.replay`
+The same engine settings apply to [DynoSim Runs](../../cli/operations/dynosim/dynosim-replay.mdx): `python -m dynamo.replay`
 reuses the mocker engine and accepts these values as JSON through `--extra-engine-args`,
 `--prefill-engine-args`, and `--decode-engine-args` rather than as individual flags.
 
@@ -251,7 +251,7 @@ Apply only when `--engine-type sglang`.
   <Card title="Simulate a Local Deployment" icon="terminal" href="../../cli/operations/dynosim/mocker-live-simulation.mdx">
     Run a frontend and Mocker worker from the command line.
   </Card>
-  <Card title="Run a DynoSim Simulation" icon="play" href="../../shared/dynosim/dynosim-replay.mdx">
+  <Card title="Run a DynoSim Simulation" icon="play" href="../../cli/operations/dynosim/dynosim-replay.mdx">
     Run one workload through a simulated configuration with `python -m dynamo.replay`.
   </Card>
   <Card title="Mocker Engine Architecture" icon="diagram-project" href="../../developer-guide/knowledge-base/modular-components/backends/mocker/mocker-engine-architecture.md">

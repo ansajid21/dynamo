@@ -39,7 +39,7 @@ forward-pass and memory provider, then evaluates candidates with Dynamo Replay.
 ## Spica and Replay Optimize
 
 Use `dynamo.profiler.utils.replay_optimize`, documented in
-[DynoSim Sweeps](../../../../../shared/dynosim/dynosim-sweeps.mdx), for a focused heuristic search over tensor-parallel
+[DynoSim Sweeps](../../../../../cli/operations/dynosim/dynosim-sweeps.mdx), for a focused heuristic search over tensor-parallel
 shapes, worker counts, router settings, SLA constraints, and a GPU budget. Use Spica for the broader
 experimental search space, Planner policies, KVBM controls, black-box optimization, or Pareto
 objectives.

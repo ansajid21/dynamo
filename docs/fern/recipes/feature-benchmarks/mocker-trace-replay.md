@@ -5,7 +5,7 @@ title: Mocker Trace Replay
 subtitle: Replay Mooncake-style traces through the mocker in offline or online mode
 ---
 
-This page has moved to [Run a DynoSim Simulation](../../shared/dynosim/dynosim-replay.mdx).
+This page has moved to [Run a DynoSim Simulation](../../cli/operations/dynosim/dynosim-replay.mdx).
 
 The old path remains so existing links, including the DynoSim blog post's
 related guide link, continue to resolve.

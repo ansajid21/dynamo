@@ -37,7 +37,7 @@ One capture supports both paths:
 | **Live replay with AIPerf** | Synthetic requests against a real Dynamo endpoint, model, and GPUs | Final latency, throughput, cache, and regression measurements |
 | **Offline simulation with DynoSim** | The request graph against Dynamo's simulated scheduler, router, and KV cache | Compare worker counts, serving topologies, routing policies, and KV-cache capacity |
 
-Live replay measures the real serving stack. Offline simulation predicts how a configuration behaves and should be followed by live validation for final numbers. See the official [AIPerf trace replay](https://github.com/ai-dynamo/aiperf/blob/main/docs/benchmark-modes/trace-replay.md) and [fixed schedule](https://github.com/ai-dynamo/aiperf/blob/main/docs/tutorials/fixed-schedule.md) guides for live benchmarking. See [DynoSim](../../shared/dynosim/overview.md) and [DynoSim Runs](../../shared/dynosim/dynosim-replay.mdx) for offline simulation.
+Live replay measures the real serving stack. Offline simulation predicts how a configuration behaves and should be followed by live validation for final numbers. See the official [AIPerf trace replay](https://github.com/ai-dynamo/aiperf/blob/main/docs/benchmark-modes/trace-replay.md) and [fixed schedule](https://github.com/ai-dynamo/aiperf/blob/main/docs/tutorials/fixed-schedule.md) guides for live benchmarking. See [DynoSim](../../cli/operations/dynosim/overview.md) and [DynoSim Runs](../../cli/operations/dynosim/dynosim-replay.mdx) for offline simulation.
 
 The complete flow is:
 

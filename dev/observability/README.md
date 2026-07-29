@@ -2,4 +2,4 @@
 
 For detailed documentation on Observability (Prometheus metrics, tracing, and logging), please refer to [docs/observability/](../../docs/fern/kubernetes/installation/observability.md).
 
-For the per-process resource monitor (`dynamo_local_resource_monitor.py`) that ships with this stack, see [docs/observability/local-resource-monitor.md](../../docs/fern/observability/local-resource-monitor.md).
+For the per-process resource monitor (`dynamo_local_resource_monitor.py`) that ships with this stack, see [docs/observability/local-resource-monitor.md](../../docs/fern/reference/observability/local-resource-monitor-guide.md).

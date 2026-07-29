@@ -24,7 +24,7 @@ import { BlogArticleMeta } from "@/components/BlogArticleMeta";
 
 Coding agents are starting to write production code at scale. [Stripe’s agents generate 1,300+ PRs per week](https://stripe.dev/blog/minions-stripes-one-shot-end-to-end-coding-agents). [Ramp attributes 30% of merged PRs to agents](https://www.infoq.com/news/2026/01/ramp-coding-agent-platform/). [Spotify reports 650+ agent-generated PRs per month](https://engineering.atspotify.com/2025/11/spotifys-background-coding-agent-part-1). Tools like Claude Code and Codex make hundreds of API calls per coding session, each carrying the full conversation history. Behind every one of these workflows is an inference stack under significant KV cache pressure.
 
-![Cumulative cache reads vs writes across a 42-call Claude Code session. Cache reads (891K tokens) grow steeply while writes (76K) and uncached input stay flat -- an 11.7x read/write ratio.](../../digest/agentic-inference/cumulative-reads-writes.png)
+![Cumulative cache reads vs writes across a 42-call Claude Code session. Cache reads (891K tokens) grow steeply while writes (76K) and uncached input stay flat -- an 11.7x read/write ratio.](../_assets/agentic-inference/cumulative-reads-writes.png)
 
 Lets take Claude Code as an example. After the first API call that writes the conversation prefix to KV cache, every subsequent call to the same worker hits 85-97% cache. Agent teams (or swarms) push this further with 97.2% aggregate cache hit rate across 4 Opus teammates. An 11.7x read/write ratio means the system reads from cache nearly 12 times for every token it writes. This is a write-once-read-many (WORM) access pattern: the system prompt and growing conversation prefix are computed once, then served from cache on every subsequent call. Maximizing cache reuse rate across all workers and keeping KV blocks warm and routable is the central optimization target for agentic inference.
 
@@ -70,7 +70,7 @@ We have also invested in day-0 tool call and reasoning parsing support for vario
 
 Today, inference servers see anonymous tokenized requests. But agent harnesses have global context that the infrastructure never sees: which agents are blocked on tool calls, which just spawned, how many turns remain in a session, and whether the current call is a quick lookup or a long synthesis. When using coding agents, the user waits for a final result, not individual token streams, so the orchestrator can reorder and prioritize requests across agents without affecting the end-user experience. Sessions run for minutes to [even days](https://factory.ai/news/missions) with long tool-call pauses. This is enough to optimize inference scheduling in ways that traditional serving cannot.
 
-![Where nvext fits in the agentic protocol stack alongside MCP and A2A](../../digest/agentic-inference/protocol-stack.svg)
+![Where nvext fits in the agentic protocol stack alongside MCP and A2A](../_assets/agentic-inference/protocol-stack.svg)
 
 Dynamo’s new agent hints extension was designed to bridge this gap. It allows any harness to attach structured hints to a request across all three API endpoints, giving the router and runtime the context they need to make agent aware scheduling and caching decisions. This is a v1 API that we are actively co-designing with the community and would love feedback from teams building agent harnesses on what signals are most useful. Please reach out to us if you have any ideas or feedback!
 
@@ -116,7 +116,7 @@ At the router, incoming requests enter a `BinaryHeap<QueueEntry>` ordered by eff
 
 Once dispatched, SGLang, vLLM, and TRT-LLM may interpret engine priority differently, so Dynamo normalizes the engine-facing value per backend. Engines like SGLang can also use priority-based radix cache eviction where lower-priority blocks are evicted first under memory pressure.
 
-![How priority flows from harness through router dispatch to engine treatment](../../digest/agentic-inference/two-gates.svg)
+![How priority flows from harness through router dispatch to engine treatment](../_assets/agentic-inference/two-gates.svg)
 
 ### Agentic Workload Routing Strategies
 
@@ -167,7 +167,7 @@ Today, KV cache is treated as a local, ephemeral resource on each worker. An age
 
 Solutions like SGLang's HiCache and Dynamo's KV Block Manager (KVBM) are building toward a 4-tier memory hierarchy:
 
-![KV cache memory hierarchy: GPU (HBM) at ~ns, CPU (pinned DRAM) at ~us, Local NVMe at ~ms, Remote Storage (NIXL) at ~ms via RDMA](../../digest/agentic-inference/kv-memory-hierarchy.svg)
+![KV cache memory hierarchy: GPU (HBM) at ~ns, CPU (pinned DRAM) at ~us, Local NVMe at ~ms, Remote Storage (NIXL) at ~ms via RDMA](../_assets/agentic-inference/kv-memory-hierarchy.svg)
 
 Blocks follow a write-through path: when a worker computes KV for a prefix, the blocks flow from GPU to CPU to disk automatically. Each block is deduplicated by sequence hash in a global registry. Once a block is registered, it is immutable and addressable by any worker that can reach the storage tier.
 
@@ -175,7 +175,7 @@ This directly solves the subagent cold-start problem. When the lead agent comput
 
 Multi-tier storage solves sharing and persistence, but blocks still arrive on GPU only after the request hits the worker. The missing piece for agentic systems is prefetch: the harness can use historical timing data to predict when an agent's tool call might return, which means it knows which blocks will be needed and when. We are building prefetch hooks so the harness can signal "bring these blocks from storage to GPU ahead of the next request." Combined with priority metadata today and richer retention APIs in the future, this gives the harness a path toward full lifecycle control: retain high-value blocks longer, control eviction ordering, and prefetch blocks proactively before they are needed.
 
-![During tool calls, KV blocks offload to host memory and storage, then prefetch back to GPU before the next LLM call.](../../digest/agentic-inference/tool-call-offload-prefetch.svg)
+![During tool calls, KV blocks offload to host memory and storage, then prefetch back to GPU before the next LLM call.](../_assets/agentic-inference/tool-call-offload-prefetch.svg)
 
 ### Selective Cache Retention
 
@@ -191,7 +191,7 @@ The next step is connecting richer retention directives with the distributed cac
 
 Consider a typical Claude Code session. The lead agent runs for 20+ turns, accumulating a growing conversation prefix. Along the way it spawns explore subagents that each run 1-3 turns and terminate. It might spawn a team of 4 specialists that work in parallel on different subtasks and then terminate. Midway through, the agent hits a context limit and summarizes its history, compressing ~175K tokens down to ~40K. Each of these events produces ephemeral KV: blocks that will never be referenced again. Subagent termination, context summarization, and closed reasoning loops all generate ephemeral KV that occupies the same memory as high-value blocks like the system prompt. Reasoning models amplify this: `<think>...</think>` blocks account for ~40% of generated tokens but become ephemeral the moment the reasoning loop closes. Without lifecycle awareness, the cache treats all of these blocks identically.
 
-![Lead agent conversation flow branches to a sub-agent. The sub-agent's ephemeral KV is evicted on session end.](../../digest/agentic-inference/subagent-lifecycle-vertical.svg)
+![Lead agent conversation flow branches to a sub-agent. The sub-agent's ephemeral KV is evicted on session end.](../_assets/agentic-inference/subagent-lifecycle-vertical.svg)
 
 The retention primitives above give us the building blocks: priority today, and TTL or token-range directives as future extensions. What is missing is the ability to associate them with sessions. If the harness can tag a subagent's requests as belonging to a session and mark that session's KV as ephemeral, the evictor can target those blocks first and skip writing them to shared storage entirely. When the subagent terminates, its session's blocks are the first to reclaim. The same mechanism applies to thinking tokens: the engine can detect `<think>` boundaries during generation and tag those blocks as ephemeral at insertion time, so they skip L2 write-back and evict before normal blocks without any external signal. The design space here is wide: harness-driven session tagging, engine-native semantic detection, hybrid approaches that combine both. We are actively exploring multiple directions and expect the right answer will vary by workload and framework.
 

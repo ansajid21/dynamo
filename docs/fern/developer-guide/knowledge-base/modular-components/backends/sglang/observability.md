@@ -195,7 +195,7 @@ SGLang defines its own `ForwardPassMetrics` struct that must field-for-field mat
 
 ### Design Reference
 
-For the full motivation and design rationale, see the [Forward Pass Metrics RFC](../../../../../proposals/vllm-rfc-forward-pass-metrics.md).
+For the full motivation and design rationale, see the [Forward Pass Metrics RFC](../../../concepts/observability/forward-pass-metrics-rfc.md).
 
 ---
 

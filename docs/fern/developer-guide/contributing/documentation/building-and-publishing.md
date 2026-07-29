@@ -89,15 +89,19 @@ fern/                             # Fern CLI configuration (fern/ is a Fern conv
 ├── convert_callouts.py           # GitHub → Fern admonition converter script
 └── .gitignore                    # Fern-specific ignores
 
-docs/                             # Documentation content
+docs/fern/                        # Documentation content and Fern configuration
 ├── index.yml                     # Navigation tree for the dev version
-├── getting-started/              # Markdown content (the actual docs)
-├── kubernetes/
-├── reference/
-├── ...
-├── assets/                       # Images, fonts, SVGs, logos
-├── digest/                       # Digest posts
-└── diagrams/                     # D2 diagram source files
+├── home/                         # Home tab pages
+├── kubernetes/                   # Kubernetes Guide tab pages
+├── cli/                          # CLI Guide tab pages
+├── features/                     # Features tab pages
+├── recipes/                      # Recipes tab pages and catalogs
+├── developer-guide/              # Developer Guide tab pages
+├── reference/                    # Reference tab pages
+├── blog/                         # Blog tab pages and support assets
+├── community/                    # Community tab pages
+├── assets/                       # Site-wide images, fonts, SVGs, and D2 sources
+└── scripts/                      # Site maintenance and asset-generation utilities
 ```
 
 ### On `docs-website`
@@ -119,7 +123,7 @@ fern/
 ├── components/                   # React components
 ├── main.css                      # Custom CSS
 ├── convert_callouts.py           # Callout converter
-├── digest/                       # Digest posts (synced from main)
+├── digest/                       # Compatibility mirror for released Blog assets
 └── assets/                       # Images, fonts, SVGs
 ```
 
@@ -194,8 +198,8 @@ be marked as `hidden: true` to make them accessible by URL but invisible in the
 sidebar.
 
 During sync to `docs-website`, the workflow copies `index.yml` to
-`fern/versions/dev.yml` and transforms paths (e.g., `getting-started/X` →
-`../pages/getting-started/X`) to match the docs-website directory layout.
+`fern/versions/dev.yml` and transforms paths (for example, `cli/getting-started/X` →
+`../pages-dev/cli/getting-started/X`) to match the docs-website directory layout.
 
 ---
 
@@ -247,8 +251,7 @@ manual `workflow_dispatch` with a tag specified.
 2. Checks out the tagged source and the `docs-website` branch side by side
 3. Checks that the version doesn't already exist, unless a manual dispatch sets
    `force_rebuild=true`
-4. Creates `fern/pages-vX.Y.Z/` from the tag's raw `docs/`, excluding the
-   shared `digest/` tree and `index.yml`
+4. Creates `fern/pages-vX.Y.Z/` from the tag's raw `docs/`, excluding `index.yml`; Blog source pages and assets remain under the tab-owned `blog/` tree
 5. Rewrites GitHub links in the snapshot:
    - `github.com/ai-dynamo/dynamo/tree/main` → `tree/vX.Y.Z`
    - `github.com/ai-dynamo/dynamo/blob/main` → `blob/vX.Y.Z`
@@ -312,7 +315,7 @@ Place images in `docs/assets/` and reference them with relative paths from your
 markdown files:
 
 ```markdown
-![Architecture Diagram](../assets/img/dynamo-architecture.svg)
+![Architecture Diagram](../../../assets/img/dynamo-architecture.svg)
 ```
 
 ### Custom components

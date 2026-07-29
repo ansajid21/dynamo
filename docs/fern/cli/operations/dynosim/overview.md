@@ -64,9 +64,9 @@ AIC provides performance models and candidate-shape information. DynoSim uses th
 |---|---|
 | Run one trace or synthetic workload through one config | [Run a DynoSim Simulation](dynosim-replay.mdx) |
 | Sweep topology and router choices under SLA/GPU constraints | [Sweep DynoSim Configurations](dynosim-sweeps.mdx) |
-| Exercise a Kubernetes frontend/router setup without GPUs | [Simulate a Kubernetes Deployment](../../kubernetes/operations/dynosim/mocker-live-simulation.mdx) |
-| Exercise a local frontend/router setup without GPUs | [Simulate a Local Deployment](../../cli/operations/dynosim/mocker-live-simulation.mdx) |
-| Study Planner scaling decisions against a trace | [Benchmark Planner Decisions](../../kubernetes/operations/dynosim/dynosim-planner-replay.mdx) |
-| Generate a deployable Kubernetes config from model/SLA intent | [Auto Deployment](../../kubernetes/auto-deployment/overview.mdx) |
+| Exercise a Kubernetes frontend/router setup without GPUs | [Simulate a Kubernetes Deployment](../../../kubernetes/operations/dynosim/mocker-live-simulation.mdx) |
+| Exercise a local frontend/router setup without GPUs | [Simulate a Local Deployment](mocker-live-simulation.mdx) |
+| Study Planner scaling decisions against a trace | [Benchmark Planner Decisions](../../../kubernetes/operations/dynosim/dynosim-planner-replay.mdx) |
+| Generate a deployable Kubernetes config from model/SLA intent | [Auto Deployment](../../../kubernetes/auto-deployment/overview.mdx) |
 
 DynoSim narrows the search space; it does not replace real-hardware validation. Use it to move quickly, find promising candidates, and understand failure modes before spending cluster time.

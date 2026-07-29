@@ -47,6 +47,6 @@ embedding it directly as a standalone Rust dependency.
 - Mocker guide:
   [../../docs/fern/kubernetes/operations/dynosim/mocker-live-simulation.mdx](../../docs/fern/kubernetes/operations/dynosim/mocker-live-simulation.mdx)
 - DynoSim runs guide:
-  [../../docs/fern/shared/dynosim/dynosim-replay.mdx](../../docs/fern/shared/dynosim/dynosim-replay.mdx)
+  [../../docs/fern/cli/operations/dynosim/dynosim-replay.mdx](../../docs/fern/cli/operations/dynosim/dynosim-replay.mdx)
 - Python component README:
   [../../components/src/dynamo/mocker/README.md](../../components/src/dynamo/mocker/README.md)

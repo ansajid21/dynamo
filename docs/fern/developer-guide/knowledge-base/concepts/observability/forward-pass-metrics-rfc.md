@@ -1,4 +1,8 @@
-# vLLM RFC: Per-Iteration Forward Pass Metrics via ZMQ
+---
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+title: Forward Pass Metrics RFC
+---
 
 > For submission to https://github.com/vllm-project/vllm/issues/new?template=750-RFC.yml
 
