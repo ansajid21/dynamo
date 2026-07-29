@@ -572,11 +572,11 @@ shared:
   owners:
   - docs
   - agents
-- glob: docs/fern/blog/_assets/agentic-inference/
+- glob: docs/fern/pages/blog/_assets/agentic-inference/
   owners:
   - docs
   - agents
-- glob: docs/fern/developer-guide/knowledge-base/modular-components/backends/sglang/agents-on-sglang.md
+- glob: docs/fern/pages/developer-guide/knowledge-base/modular-components/backends/sglang/agents-on-sglang.md
   owners:
   - docs
   - agents

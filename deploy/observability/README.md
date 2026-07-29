@@ -1,3 +1,3 @@
 # Dynamo Metrics Collection on Kubernetes
 
-For detailed documentation on collecting and visualizing metrics on Kubernetes, see [docs/kubernetes/observability/metrics.md](../../docs/fern/kubernetes/operations/observability.mdx).
+For detailed documentation on collecting and visualizing metrics on Kubernetes, see [docs/kubernetes/observability/metrics.md](../../docs/fern/pages/kubernetes/operations/observability.mdx).

@@ -23,8 +23,8 @@ site, in line with the project's authoring guides.
 
 Two authoring guides govern this work; read whichever applies before writing:
 
-- [`docs/fern/developer-guide/contributing/documentation/documentation-style-guide.md`](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/developer-guide/contributing/documentation/documentation-style-guide.md) — the standard for **every** page: frontmatter, headings, prose, terminology, links, callouts. The must-fix subset is distilled in [Style Guide Is the Standard](#style-guide-is-the-standard) and [Content Rules](#content-rules) below.
-- [`docs/fern/recipes/_catalog/README.md`](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/recipes/_catalog/README.md) — the standard for **recipe and feature-benchmark pages** (the catalog contract, the `.mdx` page blueprint, and the pure-CSS target picker). See [Add a Recipe or Feature Benchmark Page](#add-a-recipe-or-feature-benchmark-page).
+- [`docs/fern/pages/developer-guide/contributing/documentation/documentation-style-guide.md`](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/pages/developer-guide/contributing/documentation/documentation-style-guide.md) — the standard for **every** page: frontmatter, headings, prose, terminology, links, callouts. The must-fix subset is distilled in [Style Guide Is the Standard](#style-guide-is-the-standard) and [Content Rules](#content-rules) below.
+- [`docs/fern/pages/recipes/_catalog/README.md`](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/pages/recipes/_catalog/README.md) — the standard for **recipe and feature-benchmark pages** (the catalog contract, the `.mdx` page blueprint, and the pure-CSS target picker). See [Add a Recipe or Feature Benchmark Page](#add-a-recipe-or-feature-benchmark-page).
 
 ## Branch Rule
 
@@ -34,7 +34,7 @@ The `docs-website` branch is CI-managed and must **never** be edited by hand.
 ## Style Guide Is the Standard
 
 Every page under `docs/` (and the READMEs under `examples/` and `recipes/`) follows the
-[Documentation Style Guide](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/developer-guide/contributing/documentation/documentation-style-guide.md)
+[Documentation Style Guide](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/pages/developer-guide/contributing/documentation/documentation-style-guide.md)
 (`docs/documentation-style-guide.md`). Read it before writing content. The docs bot enforces a
 **must-fix** subset on every PR — get these right or the checks fail:
 
@@ -166,10 +166,10 @@ Short intro paragraph stating what the page covers.
 
 Recipe and feature-benchmark pages are **catalog-driven** and use `.mdx` (they embed a pure-CSS
 target picker). Authoritative guide:
-[`docs/fern/recipes/_catalog/README.md`](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/recipes/_catalog/README.md).
+[`docs/fern/pages/recipes/_catalog/README.md`](https://github.com/ai-dynamo/dynamo/blob/main/docs/fern/pages/recipes/_catalog/README.md).
 Each page is a triple — page + catalog entry + nav:
 
-1. **Write the `.mdx`** at `docs/fern/recipes/model-recipes/<slug>.mdx` (or `docs/fern/recipes/feature-benchmarks/<slug>.mdx`). Frontmatter
+1. **Write the `.mdx`** at `docs/fern/pages/recipes/model-recipes/<slug>.mdx` (or `docs/fern/pages/recipes/feature-benchmarks/<slug>.mdx`). Frontmatter
    carries SPDX + `title` + one-sentence `subtitle`; body starts with a short intro, then the target
    picker — multi-target pages use the radio picker, single-target pages use the **static** form
    (exact classes under [Target picker](#target-picker) below) — then the fixed section order:
@@ -177,10 +177,10 @@ Each page is a triple — page + catalog entry + nav:
    (omit if no numbers) → `## Compare All Targets` (multi-target only) → `## Related Feature
    Benchmarks` → `## Notes` → `## Source`. **MDX rule:** blank line after `<div ...>` and before
    `</div>`; keep code fences at column 0.
-2. **Add a catalog entry** — one file at `docs/fern/recipes/_catalog/recipes/<id>.yaml` (or
-   `docs/fern/recipes/feature-benchmarks/_catalog/benchmarks/<id>.yaml`), SPDX header, exactly one object. **Read the
-   sibling `schema.json` first for the exact field set** (`docs/fern/recipes/_catalog/schema.json` for
-   recipes, `docs/fern/recipes/feature-benchmarks/_catalog/schema.json` for benchmarks — they are **different** schemas) —
+2. **Add a catalog entry** — one file at `docs/fern/pages/recipes/_catalog/recipes/<id>.yaml` (or
+   `docs/fern/pages/recipes/feature-benchmarks/_catalog/benchmarks/<id>.yaml`), SPDX header, exactly one object. **Read the
+   sibling `schema.json` first for the exact field set** (`docs/fern/pages/recipes/_catalog/schema.json` for
+   recipes, `docs/fern/pages/recipes/feature-benchmarks/_catalog/schema.json` for benchmarks — they are **different** schemas) —
    each is `additionalProperties: false`, so an invented or misspelled key fails validation; don't
    guess the shape. A **recipe** entry requires `id`,
    `title`, `provider`, `model`, `status`, `targets`, `maintainer`, and each `targets[]` item
@@ -196,8 +196,8 @@ Each page is a triple — page + catalog entry + nav:
    (`recipe-sku`: `b200`/`h200`/`h100`/`gb200`/`hopper`/`blackwell`; `recipe-usecase`:
    `chat`/`agentic`; `recipe-variant`: `agg`/`disagg`/…). A value missing from CSS renders but
    filters nothing.
-5. **Add the landing card** in `docs/fern/recipes/model-recipes/overview.mdx` and update the model/target counts.
-6. **Validate**: `python3 docs/fern/recipes/_catalog/validate.py` (covers both catalogs), then `fern
+5. **Add the landing card** in `docs/fern/pages/recipes/model-recipes/overview.mdx` and update the model/target counts.
+6. **Validate**: `python3 docs/fern/pages/recipes/_catalog/validate.py` (covers both catalogs), then `fern
    check` and `fern docs broken-links`.
 
 #### Catalog entry shape
@@ -230,8 +230,8 @@ targets:                          # >= 1 item
     expected_performance: { available: false }   # add summary: when numbers exist
 ```
 
-**Benchmarks use a different schema.** A `docs/fern/recipes/feature-benchmarks/_catalog/benchmarks/<id>.yaml` entry
-validates against `docs/fern/recipes/feature-benchmarks/_catalog/schema.json`, whose required set is `id`, `title`, `page`,
+**Benchmarks use a different schema.** A `docs/fern/pages/recipes/feature-benchmarks/_catalog/benchmarks/<id>.yaml` entry
+validates against `docs/fern/pages/recipes/feature-benchmarks/_catalog/schema.json`, whose required set is `id`, `title`, `page`,
 `claim`, `subtype` (enum: `ab-test`/`feature-stack`/`topology`/`provider-comparison`/`hands-on`),
 `features`, `model`, `hardware`, `traffic`, `arms`, `results`, `maintainer` — **no** `provider`,
 `status`, or `targets`. The skeleton above is recipe-only; read the benchmark schema for that shape.
@@ -270,7 +270,7 @@ A catalog page is a triple (page + entry + nav) — never touch just one part:
 - **Remove**: delete the `.mdx`, the `_catalog/<id>.yaml`, the `index.yaml` entry, the nav `- page:`,
   and the landing card; update the model/target counts; add a redirect.
 
-Run `python3 docs/fern/recipes/_catalog/validate.py` after any of these.
+Run `python3 docs/fern/pages/recipes/_catalog/validate.py` after any of these.
 
 ### Add an Example or Recipe (code)
 
@@ -310,7 +310,7 @@ are a snapshot, not an authority; sections get added, renamed, and removed. What
 
 - Two tabs under `navigation:`. **`- tab: docs`** holds the main documentation; **`- tab: recipes`**
   is a flat list of `- page:` entries (`recipes/<slug>.mdx`), order mirroring
-  `docs/fern/recipes/_catalog/index.yaml`.
+  `docs/fern/pages/recipes/_catalog/index.yaml`.
 - In the docs tab, each section is marked by a banner comment
   (`# ==================== <Section> ====================`); a `- page:` sits under that section's
   `contents:` at 2-space indent, `path:` relative to `docs/`. In the recipes tab a `- page:` sits
@@ -378,7 +378,7 @@ fails the PR on any of these.
 ```bash
 fern check                          # nav + frontmatter structure
 fern docs broken-links              # link resolution
-python3 docs/fern/recipes/_catalog/validate.py   # recipe/benchmark changes only — validates BOTH catalogs
+python3 docs/fern/pages/recipes/_catalog/validate.py   # recipe/benchmark changes only — validates BOTH catalogs
 ```
 
 `fern check` and `broken-links` mirror the PR checks. The catalog validator is **not yet wired into
@@ -413,8 +413,8 @@ git commit -s -m "docs: <add|update|move|remove> <page-title>"
 | File | Purpose |
 |---|---|
 | `docs/documentation-style-guide.md` | Authoring standard for every page (must-fix + guidance) |
-| `docs/fern/recipes/_catalog/README.md` | Recipe/benchmark page authoring (catalog contract, blueprint, picker) |
-| `docs/fern/recipes/_catalog/validate.py` | Catalog validator (covers both recipe and benchmark catalogs) |
+| `docs/fern/pages/recipes/_catalog/README.md` | Recipe/benchmark page authoring (catalog contract, blueprint, picker) |
+| `docs/fern/pages/recipes/_catalog/validate.py` | Catalog validator (covers both recipe and benchmark catalogs) |
 | `docs/fern/index.yml` | Navigation tree (two tabs: `docs` + `recipes`) |
 | `docs/` | Content directory (`.md`, plus `.mdx` for recipe/benchmark pages) |
 | `docs/assets/` | Images, SVGs, fonts |

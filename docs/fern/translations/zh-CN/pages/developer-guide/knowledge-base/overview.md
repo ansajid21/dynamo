@@ -86,8 +86,8 @@ storage/events plane 负责缓存状态可见性和移动：
 8. **KV Events** 更新缓存可见性，供未来路由决策使用。
 9. **KVBM** 可以根据压力和复用潜力 offload 或 recall KV blocks。
 
-有关流程级细节，请参阅 [Architecture Flow](../../../../../developer-guide/knowledge-base/concepts/system-architecture/architecture-flow.md)。
-有关请求传输选项，请参阅 [Request Plane](../../../../../developer-guide/knowledge-base/concepts/communication-planes/request-plane.md)。
+有关流程级细节，请参阅 [Architecture Flow](../../../../../pages/developer-guide/knowledge-base/concepts/system-architecture/architecture-flow.md)。
+有关请求传输选项，请参阅 [Request Plane](../../../../../pages/developer-guide/knowledge-base/concepts/communication-planes/request-plane.md)。
 
 ## 控制循环
 
@@ -115,7 +115,7 @@ Planner 支持基于吞吐量和基于负载的策略。请参阅 [Planner 设�
 - Request migration/cancellation 控制正在处理中的行为。
 - Load shedding 防止过载下的级联崩溃。
 
-请参阅 [Fault Tolerance](../../../../../kubernetes/fault-tolerance/introduction.md)。
+请参阅 [Fault Tolerance](../../../../../pages/kubernetes/fault-tolerance/introduction.md)。
 
 ## Kubernetes 原生实现（CRD + Grove）
 
@@ -180,14 +180,14 @@ NIXL 通过优化跨异构内存的 worker 间传输行为，降低分布式服�
 
 ## 相关文档
 
-- [Architecture Flow](../../../../../developer-guide/knowledge-base/concepts/system-architecture/architecture-flow.md)
-- [Router Design](../../../../../developer-guide/knowledge-base/modular-components/router/router-design.md)
+- [Architecture Flow](../../../../../pages/developer-guide/knowledge-base/concepts/system-architecture/architecture-flow.md)
+- [Router Design](../../../../../pages/developer-guide/knowledge-base/modular-components/router/router-design.md)
 - [Planner 设计](modular-components/planner/planner-design.md)
-- [Discovery Plane](../../../../../developer-guide/knowledge-base/concepts/communication-planes/discovery-plane.md)
-- [Event Plane](../../../../../developer-guide/knowledge-base/concepts/communication-planes/event-plane.md)
-- [Request Plane](../../../../../developer-guide/knowledge-base/concepts/communication-planes/request-plane.md)
-- [Fault Tolerance](../../../../../kubernetes/fault-tolerance/introduction.md)
-- [Grove](../../../../../developer-guide/knowledge-base/kubernetes/multinode/grove.md)
+- [Discovery Plane](../../../../../pages/developer-guide/knowledge-base/concepts/communication-planes/discovery-plane.md)
+- [Event Plane](../../../../../pages/developer-guide/knowledge-base/concepts/communication-planes/event-plane.md)
+- [Request Plane](../../../../../pages/developer-guide/knowledge-base/concepts/communication-planes/request-plane.md)
+- [Fault Tolerance](../../../../../pages/kubernetes/fault-tolerance/introduction.md)
+- [Grove](../../../../../pages/developer-guide/knowledge-base/kubernetes/multinode/grove.md)
 
 ## 致谢
 

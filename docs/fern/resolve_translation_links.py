@@ -27,10 +27,10 @@ URLs, computed from the *current* nav on every publish so they cannot go
 stale when pages move.
 
 Source-repo convention (docs/fern/translations/<lang>/pages/<path> mirrors
-docs/fern/<path>):
+docs/fern/pages/<path>):
   - links to translated pages are relative within the locale mirror
   - links to untranslated pages are relative from the translated source file
-    back to the docs/fern/ base tree
+    back to the docs/fern/pages/ base tree
   - image refs are left alone and NOT copied into the mirror -- Fern
     resolves them against the base page location, so copies would only drift
 
@@ -83,7 +83,7 @@ def slugify(name: str) -> str:
 
 
 def build_slug_map(nav_file: Path) -> dict[str, str]:
-    """Map nav 'path' entries (relative to docs/fern/) to site slugs.
+    """Map nav `path` entries (relative to docs/fern/) to site slugs.
 
     Handles tabs, tab variants, sections, folders (by 'path'), and pages. The
     tab/variant walk mirrors how Fern composes URL segments: a tab or variant
@@ -167,7 +167,7 @@ def main() -> int:
         "--nav",
         type=Path,
         required=True,
-        help="source docs/fern/index.yml (paths relative to docs/fern/)",
+        help="source docs/fern/index.yml (paths relative to docs/fern/; authored pages begin with pages/)",
     )
     ap.add_argument(
         "--translations-root",
@@ -241,16 +241,21 @@ def main() -> int:
             def lookup(doc_rel: str):
                 """(slug, doc_rel_on_disk, translated) using extension fallback."""
                 candidates = [doc_rel]
-                alt = _alt_ext(doc_rel)
-                if alt:
-                    candidates.append(alt)
+                if not doc_rel.startswith("pages/"):
+                    candidates.append(f"pages/{doc_rel}")
+                for base in list(candidates):
+                    alt = _alt_ext(base)
+                    if alt and alt not in candidates:
+                        candidates.append(alt)
                 for cand in candidates:
                     if cand in slugs:
-                        translated = (pages_root / cand).exists()
+                        mirror_rel = cand.removeprefix("pages/")
+                        translated = (pages_root / mirror_rel).exists()
                         return slugs[cand], cand, translated
                 for cand in candidates:
                     if (args.nav.parent / cand).is_file():
-                        return None, cand, (pages_root / cand).exists()
+                        mirror_rel = cand.removeprefix("pages/")
+                        return None, cand, (pages_root / mirror_rel).exists()
                 return None, None, False
 
             def repl(m: re.Match) -> str:

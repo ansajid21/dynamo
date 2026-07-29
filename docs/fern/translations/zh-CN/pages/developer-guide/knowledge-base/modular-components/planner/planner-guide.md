@@ -6,7 +6,7 @@ title: Planner 指南
 
 Dynamo Planner 是一个自动扩缩容控制器，会在运行时调整 prefill 和 decode 引擎的副本数，以满足延迟 SLA。它读取流量信号（Prometheus 指标或负载预测器输出）和引擎性能模型，用于决定何时扩容或缩容。
 
-如需快速概览，请参阅 [Planner overview](../../../../../../../developer-guide/knowledge-base/modular-components/planner/overview.md)。如需了解架构内部机制，请参阅 [Planner 设计](planner-design.md)。
+如需快速概览，请参阅 [Planner overview](../../../../../../../pages/developer-guide/knowledge-base/modular-components/planner/overview.md)。如需了解架构内部机制，请参阅 [Planner 设计](planner-design.md)。
 
 ## 扩缩容模式
 
@@ -214,7 +214,7 @@ spec:
 
 planner 通过 `--config /path/to/planner_config.json` 接收其配置，该文件从 `planner-config-XXXX` ConfigMap 挂载。当生成 thorough 启动数据时，profiling 数据会从 `planner-profile-data-XXXX` ConfigMap 挂载。
 
-请参阅 [Profiler Guide](../../../../../../../developer-guide/knowledge-base/modular-components/profiler/profiler-guide.md)，了解完整 profiling 工作流以及如何配置部署前扫描。
+请参阅 [Profiler Guide](../../../../../../../pages/developer-guide/knowledge-base/modular-components/profiler/profiler-guide.md)，了解完整 profiling 工作流以及如何配置部署前扫描。
 
 ## 分层部署
 
@@ -224,12 +224,12 @@ planner 通过 `--config /path/to/planner_config.json` 接收其配置，该文�
 - 一个或多个 prefill pool DGD
 - 一个或多个 decode pool DGD
 
-在当前工作流中，请为每个目标 pool 独立运行 profiling，然后手动组合最终的 control DGD 和 pool DGD。请参阅 [Global Planner Guide](../../../../../../../developer-guide/knowledge-base/modular-components/planner/global-planner-guide.md)。
+在当前工作流中，请为每个目标 pool 独立运行 profiling，然后手动组合最终的 control DGD 和 pool DGD。请参阅 [Global Planner Guide](../../../../../../../pages/developer-guide/knowledge-base/modular-components/planner/global-planner-guide.md)。
 
 ## 另请参阅
 
-- [Planner overview](../../../../../../../developer-guide/knowledge-base/modular-components/planner/overview.md) — 为什么 LLM 推理需要不同的 autoscaler
+- [Planner overview](../../../../../../../pages/developer-guide/knowledge-base/modular-components/planner/overview.md) — 为什么 LLM 推理需要不同的 autoscaler
 - [Planner 设计](planner-design.md) — 架构和算法内部机制
-- [DGDR Templates](../../../../../../../recipes/kubernetes-templates/dgdr.mdx) — DGDR YAML 示例、样例配置、高级模式
-- [Global Planner Guide](../../../../../../../developer-guide/knowledge-base/modular-components/planner/global-planner-guide.md) — 多 DGD 协调、共享 GPU 预算、单端点多 pool 部署
-- [Profiler Guide](../../../../../../../developer-guide/knowledge-base/modular-components/profiler/profiler-guide.md) — profiling 数据的生成方式
+- [DGDR Templates](../../../../../../../pages/recipes/kubernetes-templates/dgdr.mdx) — DGDR YAML 示例、样例配置、高级模式
+- [Global Planner Guide](../../../../../../../pages/developer-guide/knowledge-base/modular-components/planner/global-planner-guide.md) — 多 DGD 协调、共享 GPU 预算、单端点多 pool 部署
+- [Profiler Guide](../../../../../../../pages/developer-guide/knowledge-base/modular-components/profiler/profiler-guide.md) — profiling 数据的生成方式

@@ -143,46 +143,20 @@ jobs:
 
       - name: Sync dev content from main
         run: |
-          # Sync content directories from docs/fern/ to fern/pages-dev/ on docs-website
-          # The fern project root and page content now co-locate under docs/fern/,
-          # so exclude the fern-root config/support files — only *pages* should land.
+          # Authored content lives under docs/fern/pages/. Mirror that directory
+          # directly into the docs-website branch's pages-dev/ snapshot. The Home
+          # page is copied separately to fern/index.mdx below.
           echo "Syncing content pages to docs-website branch..."
           rm -rf docs-checkout/fern/pages-dev
           mkdir -p docs-checkout/fern/pages-dev
           rsync -a \
-            --exclude='index.yml' \
-            --exclude='fern.config.json' \
-            --exclude='docs.yml' \
-            --exclude='/components' \
-            --exclude='main.css' \
-            --exclude='products' \
             --exclude='/home/index.mdx' \
-            --exclude='convert_callouts.py' \
-            --exclude='.gitignore' \
-            --exclude='dev.sh' \
-            --exclude='watch.sh' \
-            --exclude='translations' \
-            --exclude='resolve_translation_links.py' \
-            source-checkout/docs/fern/ docs-checkout/fern/pages-dev/
+            source-checkout/docs/fern/pages/ docs-checkout/fern/pages-dev/
 
-          # Component *doc* pages (.md/.mdx) live alongside the React .tsx under
-          # docs/fern/components/. The main rsync excludes components/ wholesale
-          # so the .tsx don't double-sync into pages-dev (they go to
-          # fern/components/ for the docs.yml mdx-components + footer
-          # resolution). But the nav references component doc pages from both
-          # the Developer Guide tab and the Reference tab's Components variant,
-          # and the path transform below rewrites those to
-          # ../pages-dev/components/. Sync ONLY the doc pages here — never the
-          # .tsx — so the paths resolve and the per-version snapshot
-          # (cp -r pages-dev) freezes them correctly.
-          echo "Syncing component doc pages (.md/.mdx only) to pages-dev/components/..."
-          rsync -a \
-            --include='*/' \
-            --include='*.md' \
-            --include='*.mdx' \
-            --exclude='*' \
-            --prune-empty-dirs \
-            source-checkout/docs/fern/components/ docs-checkout/fern/pages-dev/components/
+          # pages/ is a source-only container. Snapshot pages sit one directory
+          # shallower, so adjust build-time Code includes that escape to examples/.
+          python3 source-checkout/docs/fern/scripts/rewrite_snapshot_paths.py \
+            docs-checkout/fern/pages-dev
 
           # Backend deploy manifests are embedded into templates/{vllm,sglang,
           # trtllm}.mdx and DGDR manifests into recipes/kubernetes-templates/dgdr.mdx via build-time
@@ -209,8 +183,8 @@ jobs:
           cp source-checkout/docs/fern/fern.config.json docs-checkout/fern/fern.config.json
 
           # Sync README.md (developer guide, referenced from dev.yml)
-          if [ -f source-checkout/docs/fern/developer-guide/contributing/documentation/building-and-publishing.md ]; then
-            cp source-checkout/docs/fern/developer-guide/contributing/documentation/building-and-publishing.md docs-checkout/fern/README.md
+          if [ -f source-checkout/docs/fern/pages/developer-guide/contributing/documentation/building-and-publishing.md ]; then
+            cp source-checkout/docs/fern/pages/developer-guide/contributing/documentation/building-and-publishing.md docs-checkout/fern/README.md
           fi
 
           # Sync .gitignore if it exists
@@ -233,8 +207,8 @@ jobs:
           # Remove the legacy product configs and sync the standalone Home page
           # used by docs.yml and the Home tab.
           rm -rf docs-checkout/fern/products
-          cp source-checkout/docs/fern/home/index.mdx docs-checkout/fern/index.mdx
-          sed -i 's|\.\./assets/|./assets/|g' docs-checkout/fern/index.mdx
+          cp source-checkout/docs/fern/pages/home/index.mdx docs-checkout/fern/index.mdx
+          sed -i 's|\.\./\.\./assets/|./assets/|g' docs-checkout/fern/index.mdx
 
           # Sync root-level assets/ (docs.yml logos/fonts and index.mdx reference
           # ./assets/ relative to the Fern root, not pages-dev). Merge-copy without
@@ -245,11 +219,11 @@ jobs:
           fi
 
           # Sync legacy Digest asset mirror
-          if [ -d source-checkout/docs/fern/blog/_assets ]; then
+          if [ -d source-checkout/docs/fern/pages/blog/_assets ]; then
             echo "Syncing Blog assets to the legacy digest/ compatibility path..."
             # Keep legacy root Digest pages for older versions that still reference ../digest/.
             mkdir -p docs-checkout/fern/digest
-            cp -r source-checkout/docs/fern/blog/_assets/. docs-checkout/fern/digest/
+            cp -r source-checkout/docs/fern/pages/blog/_assets/. docs-checkout/fern/digest/
             # The digest posts were renamed .md -> .mdx at the source; retarget the
             # release-managed versions/v*.yml snapshots that still point at the old
             # extension. Harmless no-op once every snapshot references .mdx.
@@ -295,15 +269,15 @@ jobs:
 
       - name: Transform paths in dev.yml for docs-website layout
         run: |
-          # In the source repo, index.yml uses paths relative to docs/ (e.g. getting-started/quickstart.md).
+          # In the source repo, index.yml uses paths under pages/ (for example, pages/cli/getting-started/quickstart.mdx).
           # On docs-website, fern/versions/dev.yml needs ../pages-dev/ prefix for content
-          # and ../ prefix for digest (which is a sibling of pages/, not inside it).
+          # and ../ prefix for the legacy Digest compatibility tree.
           #
-          # Order matters: transform digest/ first so the second sub() won't re-match it
-          # (they'll start with ../ which doesn't match ^[a-zA-Z]).
+          # Transform the standalone Home page first, then map the pages/ source prefix
+          # directly onto pages-dev/.
           yq -i '(.. | select(has("path")).path) |= sub("^digest/", "../digest/")' docs-checkout/fern/versions/dev.yml
-          yq -i '(.. | select(has("path")).path) |= sub("^home/index\.mdx$", "../index.mdx")' docs-checkout/fern/versions/dev.yml
-          yq -i '(.. | select(has("path")).path) |= sub("^([a-zA-Z])", "../pages-dev/${1}")' docs-checkout/fern/versions/dev.yml
+          yq -i '(.. | select(has("path")).path) |= sub("^pages/home/index\.mdx$", "../index.mdx")' docs-checkout/fern/versions/dev.yml
+          yq -i '(.. | select(has("path")).path) |= sub("^pages/", "../pages-dev/")' docs-checkout/fern/versions/dev.yml
 
       - name: Propagate shared Reference nav to released versions
         run: |
@@ -579,42 +553,19 @@ jobs:
         run: |
           TAG="${{ steps.version.outputs.tag }}"
 
-          echo "Building docs-checkout/fern/pages-$TAG/ from source @ $TAG docs/fern/..."
+          echo "Building docs-checkout/fern/pages-$TAG/ from source @ $TAG docs/fern/pages/..."
 
           # pages-dev tracks main and can differ from a tag cut from a release
-          # branch. Build the snapshot from the tag's own docs/fern/ so it is
-          # faithful to the release (#11140). Mirror the dev-sync page selection
-          # exactly: exclude the fern-root config/support files so only *pages*
-          # land, then add the component doc pages (.md/.mdx) the same way.
+          # branch. Copy the tag's authored pages directly; Fern-root config,
+          # components, assets, scripts, and translations remain outside snapshots.
           rm -rf "docs-checkout/fern/pages-$TAG"
           mkdir -p "docs-checkout/fern/pages-$TAG"
           rsync -a \
-            --exclude='index.yml' \
-            --exclude='fern.config.json' \
-            --exclude='docs.yml' \
-            --exclude='/components' \
-            --exclude='main.css' \
-            --exclude='products' \
             --exclude='/home/index.mdx' \
-            --exclude='convert_callouts.py' \
-            --exclude='.gitignore' \
-            --exclude='dev.sh' \
-            --exclude='watch.sh' \
-            --exclude='translations' \
-            --exclude='resolve_translation_links.py' \
-            source-checkout/docs/fern/ "docs-checkout/fern/pages-$TAG/"
+            source-checkout/docs/fern/pages/ "docs-checkout/fern/pages-$TAG/"
 
-          # Component *doc* pages live alongside the React .tsx under
-          # docs/fern/components/; the nav references them from
-          # ../pages-$TAG/components/. Sync ONLY the doc pages — never the .tsx —
-          # matching the dev sync so the per-version snapshot freezes them.
-          rsync -a \
-            --include='*/' \
-            --include='*.md' \
-            --include='*.mdx' \
-            --exclude='*' \
-            --prune-empty-dirs \
-            source-checkout/docs/fern/components/ "docs-checkout/fern/pages-$TAG/components/"
+          python3 source-checkout/docs/fern/scripts/rewrite_snapshot_paths.py \
+            "docs-checkout/fern/pages-$TAG"
 
           echo "Created docs-checkout/fern/pages-$TAG/"
           ls -la "docs-checkout/fern/pages-$TAG/" | head -20
@@ -632,7 +583,7 @@ jobs:
           missing=0
           while IFS= read -r f; do
             rel="${f#docs-checkout/fern/pages-$TAG/}"
-            if [ ! -e "source-checkout/docs/fern/$rel" ]; then
+            if [ ! -e "source-checkout/docs/fern/pages/$rel" ]; then
               echo "::error::Snapshot file has no counterpart in the tagged source: $rel"
               missing=1
             fi
@@ -773,8 +724,8 @@ jobs:
           # below does not re-match.
           cp source-checkout/docs/fern/index.yml "$VERSION_FILE"
           yq -i '(.. | select(has("path")).path) |= sub("^digest/", "../digest/")' "$VERSION_FILE"
-          yq -i '(.. | select(has("path")).path) |= sub("^home/index\.mdx$", "../index.mdx")' "$VERSION_FILE"
-          yq -i '(.. | select(has("path")).path) |= sub("^([a-zA-Z])", "../pages-'"$TAG"'/${1}")' "$VERSION_FILE"
+          yq -i '(.. | select(has("path")).path) |= sub("^pages/home/index\.mdx$", "../index.mdx")' "$VERSION_FILE"
+          yq -i '(.. | select(has("path")).path) |= sub("^pages/", "../pages-'"$TAG"'/")' "$VERSION_FILE"
 
           # Revert the Reference tab's General variant to the shared source:
           # it is always-current across versions (release metadata is

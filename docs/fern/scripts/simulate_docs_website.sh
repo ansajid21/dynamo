@@ -58,36 +58,30 @@ REF_SEL='.navigation[] | select(.tab == "reference") | .variants[] | select(.tit
 
 echo "=== SYNC JOB (replayed) ==="
 rm -rf "$WT/fern/pages-dev"; mkdir -p "$WT/fern/pages-dev"
-rsync -a \
-  --exclude='index.yml' --exclude='fern.config.json' \
-  --exclude='docs.yml' --exclude='/components' --exclude='main.css' \
-  --exclude='products' --exclude='/home/index.mdx' --exclude='convert_callouts.py' \
-  --exclude='.gitignore' --exclude='dev.sh' --exclude='watch.sh' \
-  "$SRC/" "$WT/fern/pages-dev/"
-rsync -a --include='*/' --include='*.md' --include='*.mdx' --exclude='*' --prune-empty-dirs \
-  "$SRC/components/" "$WT/fern/pages-dev/components/"
+rsync -a --exclude='/home/index.mdx' "$SRC/pages/" "$WT/fern/pages-dev/"
+"$PY" "$SRC/scripts/rewrite_snapshot_paths.py" "$WT/fern/pages-dev"
 rsync -a --include='*/' --include='backends/*/deploy/**' --exclude='*' --prune-empty-dirs \
   "$REPO_ROOT/examples/" "$WT/examples/"
 
 cp "$SRC/index.yml" "$WT/fern/versions/dev.yml"
 cp "$SRC/fern.config.json" "$WT/fern/fern.config.json"
-[ -f "$SRC/developer-guide/contributing/documentation/building-and-publishing.md" ] && cp "$SRC/developer-guide/contributing/documentation/building-and-publishing.md" "$WT/fern/README.md" || true
+[ -f "$SRC/pages/developer-guide/contributing/documentation/building-and-publishing.md" ] && cp "$SRC/pages/developer-guide/contributing/documentation/building-and-publishing.md" "$WT/fern/README.md" || true
 [ -f "$SRC/convert_callouts.py" ] && cp "$SRC/convert_callouts.py" "$WT/fern/convert_callouts.py" || true
 rm -rf "$WT/fern/components"; cp -r "$SRC/components" "$WT/fern/components"
 rm -rf "$WT/fern/products"
-cp "$SRC/home/index.mdx" "$WT/fern/index.mdx"
-perl -pi -e 's|\.\./assets/|./assets/|g' "$WT/fern/index.mdx"
+cp "$SRC/pages/home/index.mdx" "$WT/fern/index.mdx"
+perl -pi -e 's|\.\./\.\./assets/|./assets/|g' "$WT/fern/index.mdx"
 [ -d "$SRC/assets" ] && cp -r "$SRC/assets/." "$WT/fern/assets/" || true
-if [ -d "$SRC/blog/_assets" ]; then
-  mkdir -p "$WT/fern/digest"; cp -r "$SRC/blog/_assets/." "$WT/fern/digest/"
+if [ -d "$SRC/pages/blog/_assets" ]; then
+  mkdir -p "$WT/fern/digest"; cp -r "$SRC/pages/blog/_assets/." "$WT/fern/digest/"
   perl -pi -e 's|(path: \.\./digest/.*)\.md$|$1.mdx|' "$WT"/fern/versions/v*.yml
 fi
 [ -f "$SRC/main.css" ] && cp "$SRC/main.css" "$WT/fern/main.css" || true
 [ -f "$SRC/custom.js" ] && cp "$SRC/custom.js" "$WT/fern/custom.js" || true
 
 yq -i '(.. | select(has("path")).path) |= sub("^digest/", "../digest/")' "$WT/fern/versions/dev.yml"
-yq -i '(.. | select(has("path")).path) |= sub("^home/index\.mdx$", "../index.mdx")' "$WT/fern/versions/dev.yml"
-yq -i '(.. | select(has("path")).path) |= sub("^([a-zA-Z])", "../pages-dev/${1}")' "$WT/fern/versions/dev.yml"
+yq -i '(.. | select(has("path")).path) |= sub("^pages/home/index\.mdx$", "../index.mdx")' "$WT/fern/versions/dev.yml"
+yq -i '(.. | select(has("path")).path) |= sub("^pages/", "../pages-dev/")' "$WT/fern/versions/dev.yml"
 
 propagate_shared_reference() {
   yq "[$REF_SEL][0]" "$WT/fern/versions/dev.yml" > "$WT/.ref_general.yml"
