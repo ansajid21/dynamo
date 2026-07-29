@@ -68,10 +68,10 @@ use crate::protocols::openai::{
 use crate::protocols::unified::UnifiedRequest;
 use crate::request_template::{RequestTemplate, resolve_request_model};
 use crate::types::Annotated;
-use dynamo_protocols::types::ChatCompletionMessageContent;
-use dynamo_protocols::types::ChatCompletionMessageToolCallChunk;
-use dynamo_protocols::types::ChatCompletionStreamResponseDelta;
-use dynamo_protocols::types::Choice;
+use dynamo_protocols::types::{
+    ChatCompletionMessageContent, ChatCompletionMessageToolCallChunk, ChatCompletionRequestMessage,
+    ChatCompletionStreamResponseDelta, Choice,
+};
 use dynamo_runtime::logging::get_distributed_tracing_context;
 use tracing::Instrument;
 
@@ -2247,6 +2247,18 @@ pub fn validate_chat_completion_required_fields(
         }));
     }
 
+    if !inner
+        .messages
+        .iter()
+        .any(|message| matches!(message, ChatCompletionRequestMessage::User(_)))
+    {
+        return Err(ErrorMessage::from_http_error(HttpError {
+            code: 400,
+            message: VALIDATION_PREFIX.to_string()
+                + "The 'messages' field must contain at least one message with role 'user'.",
+        }));
+    }
+
     Ok(())
 }
 
@@ -4357,6 +4369,98 @@ mod tests {
         };
         let result = validate_chat_completion_required_fields(&request);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_validate_chat_completion_required_fields_without_user_message() {
+        let invalid_messages = [
+            (
+                "assistant-only",
+                serde_json::json!([{"role": "assistant", "content": "Hello"}]),
+            ),
+            (
+                "system-only",
+                serde_json::json!([{"role": "system", "content": "Follow instructions"}]),
+            ),
+            (
+                "developer-only",
+                serde_json::json!([{"role": "developer", "content": "Follow instructions"}]),
+            ),
+            (
+                "tool-only",
+                serde_json::json!([{
+                    "role": "tool",
+                    "tool_call_id": "call_1",
+                    "content": "Tool result"
+                }]),
+            ),
+            (
+                "mixed-non-user",
+                serde_json::json!([
+                    {"role": "system", "content": "Follow instructions"},
+                    {"role": "assistant", "content": "Calling a tool"},
+                    {
+                        "role": "tool",
+                        "tool_call_id": "call_1",
+                        "content": "Tool result"
+                    }
+                ]),
+            ),
+        ];
+
+        for (case, messages) in invalid_messages {
+            let request: NvCreateChatCompletionRequest =
+                serde_json::from_value(serde_json::json!({
+                    "model": "test-model",
+                    "messages": messages
+                }))
+                .unwrap();
+
+            let error = validate_chat_completion_required_fields(&request)
+                .expect_err("messages without a user role should be rejected");
+            assert_eq!(error.0, StatusCode::BAD_REQUEST, "{case}");
+            assert_eq!(
+                error.1.message,
+                format!(
+                    "{VALIDATION_PREFIX}The 'messages' field must contain at least one message with role 'user'."
+                ),
+                "{case}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_validate_chat_completion_required_fields_with_user_message() {
+        let valid_messages = [
+            (
+                "user-before-assistant",
+                serde_json::json!([
+                    {"role": "user", "content": "Help"},
+                    {"role": "assistant", "content": "How can I help?"}
+                ]),
+            ),
+            (
+                "user-after-assistant",
+                serde_json::json!([
+                    {"role": "assistant", "content": "How can I help?"},
+                    {"role": "user", "content": "Continue"}
+                ]),
+            ),
+        ];
+
+        for (case, messages) in valid_messages {
+            let request: NvCreateChatCompletionRequest =
+                serde_json::from_value(serde_json::json!({
+                    "model": "test-model",
+                    "messages": messages
+                }))
+                .unwrap();
+
+            assert!(
+                validate_chat_completion_required_fields(&request).is_ok(),
+                "{case}"
+            );
+        }
     }
 
     #[test]

@@ -545,6 +545,36 @@ async fn test_http_service() {
 
     assert_eq!(response.status(), StatusCode::BAD_REQUEST, "{:?}", response);
 
+    // Assistant-only chat history is invalid client input and must be rejected
+    // before it reaches the generation engine or starts an SSE response.
+    for stream in [false, true] {
+        let response = client
+            .post(format!("http://localhost:{}/v1/chat/completions", port))
+            .json(&serde_json::json!({
+                "model": "foo",
+                "stream": stream,
+                "messages": [{"role": "assistant", "content": "I am an assistant."}]
+            }))
+            .send()
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            response.headers().get(reqwest::header::CONTENT_TYPE),
+            Some(&reqwest::header::HeaderValue::from_static(
+                "application/json"
+            ))
+        );
+        let body: serde_json::Value = response.json().await.unwrap();
+        assert_eq!(
+            body["message"],
+            "Validation: The 'messages' field must contain at least one message with role 'user'."
+        );
+        assert_eq!(body["type"], "Bad Request");
+        assert_eq!(body["code"], 400);
+    }
+
     // =========== Query /metrics endpoint ===========
     let response = client
         .get(format!("http://localhost:{}/metrics", port))
