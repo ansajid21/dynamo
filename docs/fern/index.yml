@@ -329,6 +329,8 @@ navigation:
         contents:
           - page: Overview
             path: features/multimodal/README.md
+          - page: Parallel Media Decoding
+            path: features/multimodal/parallel-media-decoding.md
           - page: Embedding Cache
             path: features/multimodal/embedding-cache.md
           - page: Multimodal KV Routing
