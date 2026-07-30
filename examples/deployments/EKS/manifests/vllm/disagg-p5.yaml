@@ -128,7 +128,7 @@ spec:
             - podAffinityTerm:
                 labelSelector:
                   matchLabels:
-                    nvidia.com/dynamo-component: VllmPrefillWorker
+                    nvidia.com/dynamo-component: VllmDecodeWorker
                 topologyKey: kubernetes.io/hostname
               weight: 100
         containers:

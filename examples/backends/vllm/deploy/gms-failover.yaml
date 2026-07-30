@@ -31,6 +31,8 @@
 apiVersion: nvidia.com/v1beta1
 kind: DynamoGraphDeployment
 metadata:
+  annotations:
+    nvidia.com/dynamo-kube-discovery-mode: container
   name: llm-serving-mn
 spec:
   backendFramework: vllm
@@ -58,6 +60,9 @@ spec:
           - python3
           - -m
           - dynamo.vllm
+          envFrom:
+          - secretRef:
+              name: hf-token-secret
           image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:latest
           name: main
           resources:
@@ -110,11 +115,8 @@ spec:
     podTemplate:
       spec:
         containers:
-        - envFrom:
-          - secretRef:
-              name: hf-token-secret
+        - image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:latest
           # command: ["python3", "-m", "dynamo.frontend"]
-          image: nvcr.io/nvidia/ai-dynamo/vllm-runtime:latest
           name: main
     replicas: 1
     type: frontend

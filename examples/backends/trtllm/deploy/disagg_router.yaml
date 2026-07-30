@@ -45,7 +45,7 @@ spec:
               nvidia.com/gpu: "1"
           workingDir: /workspace/
     replicas: 2
-    type: worker
+    type: decode
   - name: prefill
     podTemplate:
       spec:
@@ -74,4 +74,4 @@ spec:
               nvidia.com/gpu: "1"
           workingDir: /workspace/
     replicas: 2
-    type: worker
+    type: prefill

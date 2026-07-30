@@ -10,7 +10,8 @@
 #   * N engine pods (per rank) that attach to the same GPUs via DRA and race
 #     for a flock; the winner becomes primary, the others are hot shadows.
 #
-# This file contains two commented-out variants you can copy into .spec.services:
+# This file shows two variants under .spec.services: the single-node variant is
+# active, and the multinode variant is commented out.
 #
 # Single-node GMS:
 #   Creates per PCSG replica:
@@ -37,6 +38,7 @@ spec:
   services:
     # ─── Single-node GMS failover ───
     agg:
+      envFromSecret: hf-token-secret
       componentType: worker
       replicas: 1
       resources:
@@ -86,7 +88,6 @@ spec:
 
     # ─── Regular frontend (no failover) ───
     frontend:
-      envFromSecret: hf-token-secret
       componentType: frontend
       replicas: 1
       extraPodSpec:

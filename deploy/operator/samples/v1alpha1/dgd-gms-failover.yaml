@@ -10,7 +10,8 @@
 #   * N engine pods (per rank) that attach to the same GPUs via DRA and race
 #     for a flock; the winner becomes primary, the others are hot shadows.
 #
-# This file contains two commented-out variants you can copy into .spec.services:
+# This file shows two variants under .spec.services: the single-node variant is
+# commented out, and the multinode variant is active.
 #
 # Single-node GMS:
 #   Creates per PCSG replica:

@@ -45,7 +45,7 @@ spec:
           - --served-model-name
           - Qwen/Qwen3-0.6B
           - --extra-engine-args
-          - ./examples/backends/trtllm/engine_configs/qwen3/agg.yaml
+          - /workspace/examples/backends/trtllm/engine_configs/qwen3/agg.yaml
           command:
           - python3
           - -m

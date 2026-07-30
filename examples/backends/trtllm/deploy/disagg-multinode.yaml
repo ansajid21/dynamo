@@ -116,7 +116,7 @@ spec:
           - --served-model-name
           - Qwen/Qwen3-0.6B
           - --extra-engine-args
-          - /workspace/decode.yaml
+          - /workspace/engine_configs/decode.yaml
           - --disaggregation-mode
           - decode
           command:
@@ -134,7 +134,7 @@ spec:
           volumeMounts:
           - mountPath: /models
             name: models
-          - mountPath: /workspace/
+          - mountPath: /workspace/engine_configs
             name: nvidia-config
             readOnly: true
           workingDir: /workspace/
@@ -146,7 +146,7 @@ spec:
             name: nvidia-config
           name: nvidia-config
     replicas: 1
-    type: worker
+    type: decode
   - multinode:
       nodeCount: 2
     name: prefill
@@ -159,7 +159,7 @@ spec:
           - --served-model-name
           - Qwen/Qwen3-0.6B
           - --extra-engine-args
-          - /workspace/prefill.yaml
+          - /workspace/engine_configs/prefill.yaml
           - --disaggregation-mode
           - prefill
           command:
@@ -177,7 +177,7 @@ spec:
           volumeMounts:
           - mountPath: /models
             name: models
-          - mountPath: /workspace/
+          - mountPath: /workspace/engine_configs
             name: nvidia-config
             readOnly: true
           workingDir: /workspace/
@@ -189,7 +189,7 @@ spec:
             name: nvidia-config
           name: nvidia-config
     replicas: 1
-    type: worker
+    type: prefill
   env:
   - name: OMPI_ALLOW_RUN_AS_ROOT
     value: "1"
