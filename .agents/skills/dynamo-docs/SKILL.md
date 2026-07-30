@@ -333,9 +333,10 @@ Design Docs, Documentation, Hidden Pages. To place a page, match the nearest exi
   deep-relative into `docs/` — count `../` as 4 plus one per directory level of the page under
   `pages-dev/` (`getting-started/x.md` → 5, `components/router/x.md` → 6) — so the repo link
   checker and GitHub browsing stay valid; the sync workflow rewrites them to site URLs at publish
-  via `fern/resolve_translation_links.py`. Image refs stay shallow-relative (`../assets/...`) and
-  are **not** copied into the mirror — Fern resolves them against the base page. Translate prose, not code, flags, or terminology
-  (vLLM / SGLang / TensorRT-LLM stay verbatim). Keep it in sync when the English page changes,
+  via `docs/fern/scripts/resolve_translation_links.py`. Image refs stay shallow-relative
+  (`../assets/...`) and are **not** copied into the mirror — Fern resolves them against the base
+  page. Translate prose, not code, flags, or terminology (vLLM / SGLang / TensorRT-LLM stay
+  verbatim). Keep it in sync when the English page changes,
   or don't ship it stale.
 - **Versioned navs.** Author only against `docs/` on `main` (the `pages-dev` set). When a release is
   cut, the publish step builds `pages-vX.Y.Z/` from the tagged `docs/` tree and rewrites nav paths —
@@ -420,7 +421,7 @@ git commit -s -m "docs: <add|update|move|remove> <page-title>"
 | `docs/assets/` | Images, SVGs, fonts |
 | `docs/fern/docs.yml` | Fern site configuration + `redirects:` |
 | `docs/fern/main.css` | Pure-CSS target-picker axis values (recipe/benchmark pages) |
-| `fern/convert_callouts.py` | Callout conversion (GitHub -> Fern) |
+| `docs/fern/scripts/convert_callouts.py` | Callout conversion (GitHub -> Fern) |
 | `recipes/README.md` | Available Recipes tables (code recipes) |
 | `recipes/CONTRIBUTING.md` | How to contribute a code recipe |
 | `docs/README.md` | Docs system guide (build, sync, publish) |

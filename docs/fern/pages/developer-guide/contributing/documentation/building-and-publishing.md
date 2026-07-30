@@ -119,7 +119,8 @@ fern/
 ├── pages-v0.8.0/                 # Frozen snapshot of pages/ at v0.8.0
 ├── components/                   # React components
 ├── main.css                      # Custom CSS
-├── convert_callouts.py           # Callout converter
+├── scripts/
+│   └── convert_callouts.py       # Callout converter
 ├── digest/                       # Compatibility mirror for released Blog assets
 └── assets/                       # Images, fonts, SVGs
 ```
@@ -231,8 +232,8 @@ publishing. It runs three jobs depending on the trigger:
    for the docs-website layout using `yq`
 4. Syncs assets, Digest posts, the Home page, and `products/*.yml`
 5. Copies Fern config files from `docs/fern/` → docs-website's `fern/`
-   (`fern.config.json`, `components/`, `main.css`, and `convert_callouts.py`)
-6. Runs `convert_callouts.py` to transform GitHub-style callouts to Fern format
+   (`fern.config.json`, `components/`, `main.css`, and `scripts/convert_callouts.py`)
+6. Runs `scripts/convert_callouts.py` to transform GitHub-style callouts to Fern format
 7. Updates `docs.yml` from `main` while preserving the Docs product's
    release-managed path and versions from `docs-website`
 8. Commits and pushes to `docs-website`
@@ -252,7 +253,7 @@ manual `workflow_dispatch` with a tag specified.
 5. Rewrites GitHub links in the snapshot:
    - `github.com/ai-dynamo/dynamo/tree/main` → `tree/vX.Y.Z`
    - `github.com/ai-dynamo/dynamo/blob/main` → `blob/vX.Y.Z`
-6. Runs the tag's `convert_callouts.py` once on the raw snapshot
+6. Runs the tag's `scripts/convert_callouts.py` once on the raw snapshot
 7. Creates `fern/versions/vX.Y.Z.yml` from the tag's `docs/fern/index.yml`
 8. Updates `docs/fern/docs.yml`:
    - Inserts new version right after the "dev" entry
@@ -324,7 +325,7 @@ React components in `docs/fern/components/` can be used in markdown via MDX. The
 
 ## Callout Conversion
 
-The `docs/fern/convert_callouts.py` script bridges the gap between GitHub-flavored
+The `docs/fern/scripts/convert_callouts.py` script bridges the gap between GitHub-flavored
 markdown and Fern's admonition format. This lets authors use GitHub's native
 callout syntax on `main` while Fern gets its required component format.
 
@@ -342,13 +343,13 @@ callout syntax on `main` while Fern gets its required component format.
 
 ```bash
 # Convert all files in a directory (recursive, in-place)
-python3 docs/fern/convert_callouts.py --dir docs/fern/pages/
+python3 docs/fern/scripts/convert_callouts.py --dir docs/fern/pages/
 
 # Convert a single file
-python3 docs/fern/convert_callouts.py input.md output.md
+python3 docs/fern/scripts/convert_callouts.py input.md output.md
 
 # Run built-in tests
-python3 docs/fern/convert_callouts.py --test
+python3 docs/fern/scripts/convert_callouts.py --test
 ```
 
 The conversion happens automatically during the sync-dev and release-version

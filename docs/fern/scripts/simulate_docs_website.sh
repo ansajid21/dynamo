@@ -66,7 +66,9 @@ rsync -a --include='*/' --include='backends/*/deploy/**' --exclude='*' --prune-e
 cp "$SRC/index.yml" "$WT/fern/versions/dev.yml"
 cp "$SRC/fern.config.json" "$WT/fern/fern.config.json"
 [ -f "$SRC/pages/developer-guide/contributing/documentation/building-and-publishing.md" ] && cp "$SRC/pages/developer-guide/contributing/documentation/building-and-publishing.md" "$WT/fern/README.md" || true
-[ -f "$SRC/convert_callouts.py" ] && cp "$SRC/convert_callouts.py" "$WT/fern/convert_callouts.py" || true
+rm -f "$WT/fern/convert_callouts.py"
+mkdir -p "$WT/fern/scripts"
+[ -f "$SRC/scripts/convert_callouts.py" ] && cp "$SRC/scripts/convert_callouts.py" "$WT/fern/scripts/convert_callouts.py" || true
 rm -rf "$WT/fern/components"; cp -r "$SRC/components" "$WT/fern/components"
 rm -rf "$WT/fern/products"
 cp "$SRC/pages/home/index.mdx" "$WT/fern/index.mdx"
@@ -95,7 +97,7 @@ propagate_shared_reference() {
 }
 propagate_shared_reference
 
-"$PY" "$WT/fern/convert_callouts.py" --dir "$WT/fern/pages-dev" >/dev/null
+"$PY" "$WT/fern/scripts/convert_callouts.py" --dir "$WT/fern/pages-dev" >/dev/null
 
 cd "$WT/fern"
 yq '. as $doc | ([$doc.products[]? | select(.display-name == "Docs" or .display-name == "Dynamo")][0].versions // $doc.versions)' \
@@ -118,7 +120,7 @@ find "fern/pages-$TAG/reference" -type d -empty -delete 2>/dev/null || true
 
 find "fern/pages-$TAG" \( -name "*.md" -o -name "*.mdx" \) -print0 | xargs -0 perl -pi -e \
   "s|github.com/ai-dynamo/dynamo/tree/main|github.com/ai-dynamo/dynamo/tree/$TAG|g; s|github.com/ai-dynamo/dynamo/blob/main|github.com/ai-dynamo/dynamo/blob/$TAG|g"
-"$PY" fern/convert_callouts.py --dir "fern/pages-$TAG" >/dev/null
+"$PY" fern/scripts/convert_callouts.py --dir "fern/pages-$TAG" >/dev/null
 
 VERSION_FILE="fern/versions/$TAG.yml"
 cp fern/versions/dev.yml "$VERSION_FILE"

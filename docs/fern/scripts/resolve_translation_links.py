@@ -47,10 +47,12 @@ resolver retries with the sibling extension before falling back.
 
 Usage:
     # dev sync (default --pages-dir pages)
-    resolve_translation_links.py --nav docs/fern/index.yml \
-        --translations-root docs/fern/translations --site-root /dynamo --version-slug dev
+    python3 docs/fern/scripts/resolve_translation_links.py \
+        --nav docs/fern/index.yml --translations-root docs/fern/translations \
+        --site-root /dynamo --version-slug dev
     # release snapshot
-    resolve_translation_links.py --nav docs/fern/index.yml \
+    python3 docs/fern/scripts/resolve_translation_links.py \
+        --nav docs/fern/index.yml \
         --translations-root docs/fern/translations --site-root /dynamo \
         --version-slug vX.Y.Z --pages-dir pages-vX.Y.Z --github-ref vX.Y.Z
 

@@ -41,24 +41,24 @@ Fern admonitions look like:
     <Warning>This raises a warning to watch out for</Warning>
     <Error>This indicates a potential error</Error>
 
-This script can be used when syncing docs from the main docs/ folder
-to the fern/pages/ folder for the docs-website branch.
+This script is used when syncing docs from docs/fern/pages/ on the source
+branch to fern/pages-dev/ on the docs-website branch.
 
 Usage:
     # Convert a single file
-    python convert_callouts.py input.md output.md
+    python3 docs/fern/scripts/convert_callouts.py input.md output.md
 
     # Convert a single file in-place
-    python convert_callouts.py input.md
+    python3 docs/fern/scripts/convert_callouts.py input.md
 
     # Convert all markdown files in a directory
-    python convert_callouts.py --dir /path/to/pages
+    python3 docs/fern/scripts/convert_callouts.py --dir /path/to/pages
 
     # Convert from stdin to stdout
-    cat input.md | python convert_callouts.py -
+    cat input.md | python3 docs/fern/scripts/convert_callouts.py -
 
     # Run tests
-    python convert_callouts.py --test
+    python3 docs/fern/scripts/convert_callouts.py --test
 """
 
 import argparse

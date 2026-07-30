@@ -348,7 +348,7 @@ Author source pages under `docs/fern/`. Use the lightest format that supports th
   component.
 - Use `.md` for straightforward prose that works as portable GitHub-flavored Markdown.
 - In `.mdx`, write admonitions with Fern callout components.
-- In `.md`, write admonitions with GitHub syntax; `fern/convert_callouts.py` converts them during the
+- In `.md`, write admonitions with GitHub syntax; `docs/fern/scripts/convert_callouts.py` converts them during the
   build.
 - Do not add components as decoration. Components must improve sequencing, branching, disclosure, or
   scanning.

@@ -192,9 +192,12 @@ jobs:
             cp source-checkout/docs/fern/.gitignore docs-checkout/fern/.gitignore
           fi
 
-          # Sync convert_callouts.py script
-          if [ -f source-checkout/docs/fern/convert_callouts.py ]; then
-            cp source-checkout/docs/fern/convert_callouts.py docs-checkout/fern/convert_callouts.py
+          # Sync the callout converter under fern/scripts/ and remove its old
+          # root-level location from docs-website after the source-tree move.
+          rm -f docs-checkout/fern/convert_callouts.py
+          if [ -f source-checkout/docs/fern/scripts/convert_callouts.py ]; then
+            mkdir -p docs-checkout/fern/scripts
+            cp source-checkout/docs/fern/scripts/convert_callouts.py docs-checkout/fern/scripts/convert_callouts.py
           fi
 
           # Sync components/ directory (e.g., CustomFooter.tsx)
@@ -315,10 +318,10 @@ jobs:
       - name: Convert GitHub callouts to Fern format
         run: |
           echo "Converting GitHub-style callouts to Fern format in pages/..."
-          python3 docs-checkout/fern/convert_callouts.py --dir docs-checkout/fern/pages-dev
+          python3 docs-checkout/fern/scripts/convert_callouts.py --dir docs-checkout/fern/pages-dev
           # Convert the localized mirrors too (no-op when translations/ is absent).
           if [ -d docs-checkout/fern/translations ]; then
-            python3 docs-checkout/fern/convert_callouts.py --dir docs-checkout/fern/translations
+            python3 docs-checkout/fern/scripts/convert_callouts.py --dir docs-checkout/fern/translations
           fi
           echo "Callout conversion complete."
 
@@ -326,11 +329,11 @@ jobs:
         run: |
           # Rewrites relative page links in translations to site URLs computed
           # from the current nav (Fern's early-access localization does not yet
-          # resolve them; see docs/fern/resolve_translation_links.py). Guarded on
-          # both the mirror and the resolver so it no-ops until A4 lands them.
-          if [ -d docs-checkout/fern/translations ] && [ -f source-checkout/docs/fern/resolve_translation_links.py ]; then
+          # resolve them; see docs/fern/scripts/resolve_translation_links.py).
+          # Guarded on both the mirror and resolver so it no-ops until A4 lands them.
+          if [ -d docs-checkout/fern/translations ] && [ -f source-checkout/docs/fern/scripts/resolve_translation_links.py ]; then
             pip install --quiet pyyaml
-            python3 source-checkout/docs/fern/resolve_translation_links.py \
+            python3 source-checkout/docs/fern/scripts/resolve_translation_links.py \
               --nav source-checkout/docs/fern/index.yml \
               --translations-root docs-checkout/fern/translations \
               --site-root /dynamo --version-slug dev
@@ -681,9 +684,9 @@ jobs:
 
           # Use the tag's own converter so conversion matches the release.
           echo "Converting callouts in pages-$TAG/ with the tag's convert_callouts.py..."
-          python3 source-checkout/docs/fern/convert_callouts.py --dir "docs-checkout/fern/pages-$TAG"
+          python3 source-checkout/docs/fern/scripts/convert_callouts.py --dir "docs-checkout/fern/pages-$TAG"
           for d in docs-checkout/fern/translations/*/"pages-$TAG"; do
-            [ -d "$d" ] && python3 source-checkout/docs/fern/convert_callouts.py --dir "$d"
+            [ -d "$d" ] && python3 source-checkout/docs/fern/scripts/convert_callouts.py --dir "$d"
           done
           echo "Callout conversion complete."
 
@@ -693,14 +696,14 @@ jobs:
 
           # Rewrites relative page links in the translation snapshot to site URLs
           # under this tag's version slug, from the tag's nav (see
-          # docs/fern/resolve_translation_links.py). Guarded on the snapshot and
-          # the resolver; capability-gated on --pages-dir so workflow_dispatch
+          # docs/fern/scripts/resolve_translation_links.py). Guarded on the
+          # snapshot and resolver; capability-gated on --pages-dir so workflow_dispatch
           # rebuilds of tags whose resolver predates that flag skip cleanly.
           if compgen -G "docs-checkout/fern/translations/*/pages-$TAG" > /dev/null \
-             && [ -f source-checkout/docs/fern/resolve_translation_links.py ]; then
-            if grep -q -- '--pages-dir' source-checkout/docs/fern/resolve_translation_links.py; then
+             && [ -f source-checkout/docs/fern/scripts/resolve_translation_links.py ]; then
+            if grep -q -- '--pages-dir' source-checkout/docs/fern/scripts/resolve_translation_links.py; then
               pip install --quiet pyyaml
-              python3 source-checkout/docs/fern/resolve_translation_links.py \
+              python3 source-checkout/docs/fern/scripts/resolve_translation_links.py \
                 --nav source-checkout/docs/fern/index.yml \
                 --translations-root docs-checkout/fern/translations \
                 --site-root /dynamo --version-slug "$TAG" \
