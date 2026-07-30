@@ -23,8 +23,7 @@ spec:
           - |
             export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
             export PATH=$PATH:/usr/local/nvidia/bin:/usr/local/nvidia/lib64
-            /sbin/ldconfig
-            python3 -m dynamo.vllm --model Qwen/Qwen3-0.6B --disaggregation-mode decode
+            python3 -m dynamo.vllm --model Qwen/Qwen3-0.6B --disaggregation-mode decode --kv-transfer-config '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
           command:
           - /bin/sh
           - -c
@@ -37,6 +36,9 @@ spec:
             limits:
               nvidia.com/gpu: "1"
           startupProbe:
+            httpGet:
+              path: /live
+              port: 9090            
             initialDelaySeconds: 180
           workingDir: /workspace/examples/backends/vllm
     replicas: 1
@@ -49,8 +51,7 @@ spec:
           - |
             export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
             export PATH=$PATH:/usr/local/nvidia/bin:/usr/local/nvidia/lib64
-            /sbin/ldconfig
-            python3 -m dynamo.vllm --model Qwen/Qwen3-0.6B --disaggregation-mode prefill
+            python3 -m dynamo.vllm --model Qwen/Qwen3-0.6B --disaggregation-mode prefill --kv-transfer-config '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
           command:
           - /bin/sh
           - -c
