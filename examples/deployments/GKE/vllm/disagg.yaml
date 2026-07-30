@@ -34,7 +34,7 @@ spec:
           - |
             export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
             export PATH=$PATH:/usr/local/nvidia/bin:/usr/local/nvidia/lib64
-            python3 -m dynamo.vllm --model Qwen/Qwen3-0.6B --disaggregation-mode decode
+            python3 -m dynamo.vllm --model Qwen/Qwen3-0.6B --disaggregation-mode decode --kv-transfer-config '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
     VllmPrefillWorker:
       envFromSecret: hf-token-secret
       componentType: worker
@@ -54,4 +54,4 @@ spec:
           - |
             export LD_LIBRARY_PATH=/usr/local/nvidia/lib64:$LD_LIBRARY_PATH
             export PATH=$PATH:/usr/local/nvidia/bin:/usr/local/nvidia/lib64
-            python3 -m dynamo.vllm --model Qwen/Qwen3-0.6B --disaggregation-mode prefill
+            python3 -m dynamo.vllm --model Qwen/Qwen3-0.6B --disaggregation-mode prefill --kv-transfer-config '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
